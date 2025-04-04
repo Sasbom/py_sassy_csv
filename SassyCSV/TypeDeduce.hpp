@@ -22,7 +22,7 @@ int _parse_int(int gather, char c) {
     return (gather * 10) + n;
 }
 
-double _parse_double(bool passed_comma,double gather, char c, int* decimal_point) {
+double _parse_double(bool passed_comma, double gather, char c, int* decimal_point) {
     int n = _char_to_int(c);
     if (!passed_comma) {
         gather = (gather*10.0) + static_cast<double>(n);

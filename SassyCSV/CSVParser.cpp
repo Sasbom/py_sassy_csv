@@ -201,9 +201,9 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 					delimiters_togo = expected_delimiters;
 					int c = 0;
 					for (auto& el : collect_line) {
-						auto data = process_entry(el, float_ignore, float_delimiter);
-						std::cout << data.index() << " <- variant index\n";
-						auto entry = std::make_shared<CSVEntry>(data);
+						auto entry = std::make_shared<CSVEntry>(
+							process_entry(el, float_ignore, float_delimiter)
+						);
 						auto header_entry = csv_data->headers[c];
 						py::print(header_entry,">", entry->py_read());
 						c += 1;

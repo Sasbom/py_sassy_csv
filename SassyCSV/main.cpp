@@ -16,6 +16,7 @@ PYBIND11_MODULE(_SassyCSV, m) {
 		.def(py::init<std::string &>())
 		.def("set_data",&CSVEntry::set_data, "Change this entry's stored value.")
 		.def("read",&CSVEntry::py_read,"Read the value.")
+		.def("__repr__", [](CSVEntry& e) {return py::str("<CSVEntry holding: ") + py::str(e.py_read()) + py::str(" >"); }, "")
 		.def("__str__", [](CSVEntry & e) {return py::str(e.py_read()); }, "");
 	py::class_<CSVParser::CSVOptions>(m, "CSVOptions")
 		.def(py::init<>());
