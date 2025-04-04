@@ -1,5 +1,5 @@
 #ifndef _CSV_PARSER
-#define _CSVPARSER
+#define _CSV_PARSER
 
 #include <string_view>
 #include <vector>

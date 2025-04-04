@@ -1,4 +1,5 @@
 #include "CSVParser.hpp"
+#include "TypeDeduce.hpp"
 #define PYBIND11_CPP20
 #include <pybind11/pybind11.h>
 #include <pybind11/typing.h>
@@ -112,6 +113,10 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 	char quote = options.quote.data()[0];
 	char delimiter = options.delimiter.data()[0];
 	char newline = options.newline.data()[0];
+
+	char float_delimiter = options.float_delimiter.data()[0];
+	char float_ignore = options.float_ignore.data()[0];
+
 	std::cout << quote << " " << delimiter << " " << newline;
 	int size = 0;
 	std::cout << "reading file" << "\n";
@@ -170,6 +175,7 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 					std::cout << "collecting headers\n";
 					for (auto el : collect_line) {
 						py::print(el);
+						
 						csv_data->headers.push_back(el);
 						if (csv_data->data.contains(el)) {
 							// this will eventually have to be solved by somehow concatenating multiple headers.
@@ -194,8 +200,10 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 					std::cout << "adding line\n";
 					delimiters_togo = expected_delimiters;
 					int c = 0;
-					for (auto el : collect_line) {
-						auto entry = std::make_shared<CSVEntry>(el);
+					for (auto& el : collect_line) {
+						auto data = process_entry(el, float_ignore, float_delimiter);
+						std::cout << data.index() << " <- variant index\n";
+						auto entry = std::make_shared<CSVEntry>(data);
 						auto header_entry = csv_data->headers[c];
 						py::print(header_entry,">", entry->py_read());
 						c += 1;
