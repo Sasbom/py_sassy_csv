@@ -30,3 +30,8 @@
 *.exe
 *.out
 *.app
+
+# folders
+.vs
+./x64
+./SassyCSV/x64
