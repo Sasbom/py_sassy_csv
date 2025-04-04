@@ -32,6 +32,6 @@
 *.app
 
 # folders
-.vs
-./x64
-./SassyCSV/x64
+.vs/**
+x64/*
+SassyCSV/x64/*
