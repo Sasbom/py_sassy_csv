@@ -19,7 +19,7 @@ using CSV_headervar = std::variant<std::string_view, std::vector<std::string_vie
 
 struct CSVData;
 
-struct CSVEntry {
+struct CSVEntry : std::enable_shared_from_this<CSVEntry> {
 	std::shared_ptr<CSVData> parent;
 	CSV_datavar data{};
 	int row{};
@@ -28,6 +28,7 @@ struct CSVEntry {
 	CSVEntry(CSV_datavar const& data);
 	
 	py::object py_read();
+	py::str strtype();
 	void set_data(CSV_datavar const & data);
 };
 
@@ -45,7 +46,7 @@ struct CSVRow {
 	std::unordered_map<std::string_view, CSVEntry> data;
 };
 
-struct CSVData {
+struct CSVData: std::enable_shared_from_this<CSVData> {
 	using data_t = std::vector <std::shared_ptr<CSVEntry>>;
 	
 	std::vector<std::string> headers{};
@@ -53,22 +54,25 @@ struct CSVData {
 	std::unordered_map<std::string, data_t> data{};
 
 	std::vector<std::string> read_headers();
-	data_t read_column(std::string const & key);
+	py::object read_headers_py();
+	data_t read_column_str(std::string const & key);
+	CSVData::data_t read_column_py(py::tuple tup_key);
 };
 
 struct CSVParser {
 	struct CSVOptions {
-		std::string_view const delimiter = ",";
-		std::string_view const quote = "\"";
-		std::string_view const newline = "\n";
+		std::string_view delimiter = ",";
+		std::string_view quote = "\"";
+		std::string_view newline = "\n";
 		bool parse_numbers = true;
-		std::string_view const float_delimiter = ".";
-		std::string_view const float_ignore = "";
-		int const expected_delimiters = -1;
-		int const header_lines = 1;
+		std::string_view float_delimiter = ".";
+		std::string_view float_ignore = "";
+		int expected_delimiters = -1;
+		int header_lines = 1;
 
 		//CSVOptions();
 		CSVOptions(CSVOptions const & opts);
+		//CSVOptions(CSVOptions const&) = default;
 		CSVOptions(
 			std::string_view const & delimiter = ",",
 			std::string_view const & quote = "\"",
@@ -82,6 +86,9 @@ struct CSVParser {
 	};
 
 	CSVOptions options{};
+
+	void set_options(CSVOptions const & options);
+	CSVOptions get_options();
 
 	CSVParser(
 		std::string_view const & delimiter= ",", 

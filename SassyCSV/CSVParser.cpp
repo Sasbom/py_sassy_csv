@@ -1,5 +1,6 @@
 #include "CSVParser.hpp"
 #include "TypeDeduce.hpp"
+#include "Util.hpp"
 #define PYBIND11_CPP20
 #include <pybind11/pybind11.h>
 #include <pybind11/typing.h>
@@ -21,10 +22,47 @@ std::vector<std::string> CSVData::read_headers() {
 	return this->headers;
 }
 
-CSVData::data_t CSVData::read_column(std::string const & key) {
+py::object CSVData::read_headers_py() {
+	py::list lst{};
+	for (auto el : this->headers) {
+		if (el.contains('\x1f')) {
+			auto els = split_str(el);
+			auto tup = py::tuple(els.size());
+			int c{ 0 };
+			for (auto els_el : els) {
+				tup[c] = els_el;
+				c++;
+			}
+			lst.append(tup);
+		}
+		else {
+			lst.append(py::str(el));
+		}
+	}
+	return lst;
+}
+
+CSVData::data_t CSVData::read_column_str(std::string const & key) {
 	if (!this->data.contains(key))
 		throw py::key_error("Provided key does not exist in data.");
 	return this->data.at(key);
+}
+
+CSVData::data_t CSVData::read_column_py(py::tuple tuple_key) {
+	std::size_t size = tuple_key.size();
+	std::string collect{};
+	
+	for (std::size_t i{ 0 }; i < size; i++) {
+		collect += std::string(py::str(tuple_key[i]));
+		
+		if (i < size - 1) {
+			collect += '\x1f';
+		}
+	}
+
+	if (!this->data.contains(collect))
+		throw py::key_error("Provided key does not exist in data.");
+	return this->data.at(collect);
 }
 
 // Parser
@@ -34,6 +72,7 @@ CSVData::data_t CSVData::read_column(std::string const & key) {
 CSVParser::CSVOptions::CSVOptions(CSVParser::CSVOptions const & opts) : 
 	delimiter{ opts.delimiter },
 	quote{ opts.quote },
+	newline{ opts.newline },
 	parse_numbers{ opts.parse_numbers },
 	float_delimiter{ opts.float_delimiter },
 	expected_delimiters{ opts.expected_delimiters },
@@ -55,6 +94,21 @@ CSVParser::CSVOptions::CSVOptions(
 	float_delimiter{ float_delimiter }, 
 	expected_delimiters{ expected_delimiters },
 	header_lines{ header_lines } {};
+
+CSVParser::CSVOptions CSVParser::get_options() {
+	return this->options;
+}
+
+void CSVParser::set_options(CSVParser::CSVOptions const & options) {
+	this->options.delimiter = options.delimiter;
+	this->options.quote = options.quote;
+	this->options.newline = options.newline;
+	this->options.parse_numbers = options.parse_numbers;
+	this->options.float_delimiter = options.float_delimiter;
+	this->options.float_ignore = options.float_ignore;
+	this->options.expected_delimiters = options.expected_delimiters;
+	this->options.header_lines = options.header_lines;
+}
 
 // Parser Main
 CSVParser::CSVParser(
@@ -85,6 +139,18 @@ py::object CSVEntry::py_read() {
 
 void CSVEntry::set_data(CSV_datavar const& data) {
 	this->data = data;
+}
+
+py::str CSVEntry::strtype() {
+	switch (data.index()) {
+	case 0:
+		return py::str("str");
+	case 1:
+		return py::str("int");
+	case 2:
+		return py::str("float");
+	}
+	return py::none();
 }
 // parser
 
@@ -162,31 +228,48 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 
 		if (cur_char == newline) {
 			if (cur_header < headers && get_headers) {
+				std::cout << "getting headers \n";
 				// header phase
 				if (cur_header == 0) {
 					count_commas = false;
-					cur_header += 1;
+					this->options.expected_delimiters = expected_delimiters;
+					//cur_header += 1;
 				}
 				if (cur_header == headers - 1) {
+					std::cout << "stopping header gather \n";
 					get_headers = false;
 					
 				}
 				if (delimiters_togo == 0) {
-					std::cout << "collecting headers\n";
+					std::cout << "collecting headers" << cur_header << headers << "\n";
+					bool append = (cur_header > 0);
+					int c{ 0 };
 					for (auto el : collect_line) {
-						py::print(el);
-						
-						csv_data->headers.push_back(el);
-						if (csv_data->data.contains(el)) {
-							// this will eventually have to be solved by somehow concatenating multiple headers.
-							// a double header with
-							// "Polish","Blocking"
-							// "Assigned","Assigned"
-							// is still valid, just need to find some uncommon character to split them.
-							throw std::runtime_error("Headers with same name encountered.");
+						py::print(el,get_headers, append);
+						if (!append) {
+							csv_data->headers.push_back(el);
 						}
-						auto vec = new std::vector<std::shared_ptr<CSVEntry>>{};
-						csv_data->data.insert({ el, *vec });
+						else {
+							(&csv_data->headers.data()[c])->append('\x1f' + el);
+							std::cout << csv_data->headers.data()[c] << "\n";
+							
+						}
+						// when collection is done, compose actual headers.
+						if (!get_headers) {
+							auto el_new = csv_data->headers.data()[c];
+							if (csv_data->data.contains(el)) {
+								// this will eventually have to be solved by somehow concatenating multiple headers.
+								// a double header with
+								// "Polish","Blocking"
+								// "Assigned","Assigned"
+								// is still valid, just need to find some uncommon character to split them.
+								throw std::runtime_error("Headers with same name encountered.");
+							}
+							auto vec = new std::vector<std::shared_ptr<CSVEntry>>{};
+							std::cout << "inserting with key: " << el_new << "\n";
+							csv_data->data.insert({ el_new, *vec });
+						}
+						c += 1;
 					}
 					collect_line.clear();
 					cur_header += 1;
@@ -200,10 +283,19 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 					std::cout << "adding line\n";
 					delimiters_togo = expected_delimiters;
 					int c = 0;
+					
 					for (auto& el : collect_line) {
+						CSV_datavar proc_el{};
+						if (options.parse_numbers) {
+							proc_el = process_entry(el, float_ignore, float_delimiter);
+						}
+						else {
+							proc_el = el;
+						}
 						auto entry = std::make_shared<CSVEntry>(
-							process_entry(el, float_ignore, float_delimiter)
+							proc_el
 						);
+
 						auto header_entry = csv_data->headers[c];
 						py::print(header_entry,">", entry->py_read());
 						c += 1;
