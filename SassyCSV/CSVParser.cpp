@@ -12,6 +12,7 @@
 #include <iostream>
 
 namespace py = pybind11;
+using namespace py::literals;
 // constructors
 
 // Entry
@@ -65,6 +66,36 @@ CSVData::data_t CSVData::read_column_py(py::tuple tuple_key) {
 	return this->data.at(collect);
 }
 
+py::dict CSVData::read_row_py(int index) {
+	if (index < 0) {
+		index = (this->size - 1) - index;
+	}
+	if (index < 0 || index >(this->size - 1)) {
+		throw py::index_error("Requested row not in range.");
+	}
+	auto d = py::dict{};
+
+	for (auto el : this->headers) {
+		if (el.contains('\x1f')) {
+			auto els = split_str(el);
+			auto tup = py::tuple(els.size());
+			int c{ 0 };
+			for (auto els_el : els) {
+				tup[c] = els_el;
+				c++;
+			}
+			auto data = this->read_column_py(tup)[index];
+			d[tup] = data;
+		}
+		else {
+			auto data = this->read_column_str(el)[index];
+			d[py::str(el)] = data;
+		}
+	}
+
+	return d;
+}
+
 // Parser
 // Parser Options
 //CSVParser::CSVOptions::CSVOptions() {};
@@ -94,6 +125,24 @@ CSVParser::CSVOptions::CSVOptions(
 	float_delimiter{ float_delimiter }, 
 	expected_delimiters{ expected_delimiters },
 	header_lines{ header_lines } {};
+
+std::string_view CSVParser::CSVOptions::get_delimiter() { return this->delimiter; };
+std::string_view CSVParser::CSVOptions::get_quote() { return this->quote; };
+std::string_view CSVParser::CSVOptions::get_newline() { return this->newline; };
+bool CSVParser::CSVOptions::get_parse_numbers() { return this->parse_numbers; };
+std::string_view CSVParser::CSVOptions::get_float_delimiter() { return this->float_delimiter; };
+std::string_view CSVParser::CSVOptions::get_float_ignore(){ return this->float_ignore; };
+int CSVParser::CSVOptions::get_expected_delimiters() { return this->expected_delimiters; };
+int CSVParser::CSVOptions::get_header_lines() { return this->header_lines; };
+
+void CSVParser::CSVOptions::set_delimiter(std::string_view const & delimiter) { this->delimiter = delimiter;};
+void CSVParser::CSVOptions::set_quote(std::string_view const& quote) { this->quote = quote; };
+void CSVParser::CSVOptions::set_newline(std::string_view const& newline) { this->newline = newline; };
+void CSVParser::CSVOptions::set_parse_numbers(bool const& parse_numbers) { this->parse_numbers = parse_numbers; };
+void CSVParser::CSVOptions::set_float_delimiter(std::string_view const& float_delimiter) { this->float_delimiter = float_delimiter; };
+void CSVParser::CSVOptions::set_float_ignore(std::string_view const& float_ignore) { this->float_ignore = float_ignore; };
+void CSVParser::CSVOptions::set_expected_delimiters(int const& expected_delimiters) { this->expected_delimiters = expected_delimiters; };
+void CSVParser::CSVOptions::set_header_lines(int const& header_lines) { this->header_lines = header_lines; };
 
 CSVParser::CSVOptions CSVParser::get_options() {
 	return this->options;
@@ -319,21 +368,10 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
         // passed all edge cases, proceed collecting ...
 		collect += cur_char;
 	}
-	
 	file_stream.close();
 	
-	// for (auto& h : csv_data->headers) {
-	// 	std::cout << h << " | ";
-	// }
-	// std::cout << "\n";
-	// for (int i{ 0 }; i < size; i ++) {
-	// 	for (auto& el : csv_data->headers ) {
-	// 		auto& vec = csv_data->data.at(el);
-	// 		std::cout << std::get<0>(vec[i]->data) << " | ";
-	// 	}
-	// 	std::cout << "\n";
-	// }
-
-	std::cout << "done parsing?\n";
+	csv_data->size = size;
+	
+	std::cout << "done parsing? done parsing.\n";
 	return csv_data;
 }

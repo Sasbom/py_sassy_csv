@@ -53,10 +53,13 @@ struct CSVData: std::enable_shared_from_this<CSVData> {
 	int header_count{};
 	std::unordered_map<std::string, data_t> data{};
 
+	int size{};
+
 	std::vector<std::string> read_headers();
 	py::object read_headers_py();
 	data_t read_column_str(std::string const & key);
 	CSVData::data_t read_column_py(py::tuple tup_key);
+	py::dict read_row_py(int index);
 };
 
 struct CSVParser {
@@ -83,6 +86,23 @@ struct CSVParser {
 			int const & expected_delimiters = -1,
 			int const & header_lines = 1
 		);
+
+		std::string_view get_delimiter();
+		std::string_view get_quote();
+		std::string_view get_newline();
+		bool get_parse_numbers();
+		std::string_view get_float_delimiter();
+		std::string_view get_float_ignore();
+		int get_expected_delimiters();
+		int get_header_lines();
+		void set_delimiter(std::string_view const& delimiter);
+		void set_quote(std::string_view const& quote);
+		void set_newline(std::string_view const& newline);
+		void set_parse_numbers(bool const& parse_numbers);
+		void set_float_delimiter(std::string_view const& float_delimiter);
+		void set_float_ignore(std::string_view const& float_ignore);
+		void set_expected_delimiters(int const& expected_delimiters);
+		void set_header_lines(int const& header_lines);
 	};
 
 	CSVOptions options{};

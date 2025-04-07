@@ -4,6 +4,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
+#include <pybind11/operators.h>
 #include "CSVParser.hpp"
 
 namespace py = pybind11;
@@ -24,20 +25,29 @@ PYBIND11_MODULE(_SassyCSV, m) {
 		.def(py::init<>())
 		.def(py::init<std::string_view&,
 			std::string_view&,
-			std::string_view&, 
+			std::string_view&,
 			bool&,
 			std::string_view&,
 			std::string_view&,
 			int&,
 			int&>(),
-			"delimiter"_a = ",", 
-			"quote"_a = "\"", 
-			"newline"_a = "\n", 
-			"parse_numbers"_a = true, 
-			"float_delimiter"_a = ".", 
-			"float_ignore"_a = " ", 
-			"expected_delimiters"_a = -1, 
-			"header_lines"_a = 1);
+			"delimiter"_a = ",",
+			"quote"_a = "\"",
+			"newline"_a = "\n",
+			"parse_numbers"_a = true,
+			"float_delimiter"_a = ".",
+			"float_ignore"_a = " ",
+			"expected_delimiters"_a = -1,
+			"header_lines"_a = 1)
+		.def_property("delimiter", &CSVParser::CSVOptions::get_delimiter, &CSVParser::CSVOptions::set_delimiter)
+		.def_property("quote", &CSVParser::CSVOptions::get_quote, &CSVParser::CSVOptions::set_quote)
+		.def_property("newline", &CSVParser::CSVOptions::get_newline, &CSVParser::CSVOptions::set_newline)
+		.def_property("parse_numbers", &CSVParser::CSVOptions::get_parse_numbers, &CSVParser::CSVOptions::set_parse_numbers)
+		.def_property("float_delimiter", &CSVParser::CSVOptions::get_float_delimiter, &CSVParser::CSVOptions::set_float_delimiter)
+		.def_property("float_ignore", &CSVParser::CSVOptions::get_float_ignore, &CSVParser::CSVOptions::set_float_ignore)
+		.def_property("expected_delimiters", &CSVParser::CSVOptions::get_expected_delimiters, &CSVParser::CSVOptions::set_expected_delimiters)
+		.def_property("header_lines", &CSVParser::CSVOptions::get_header_lines, &CSVParser::CSVOptions::set_header_lines);
+
 	py::class_<CSVParser>(m, "CSVParser")
 		.def(py::init<>())
 		.def("parse", &CSVParser::parse, "Parse a csv file.")
@@ -48,5 +58,6 @@ PYBIND11_MODULE(_SassyCSV, m) {
 		//.def("read_headers", &CSVData::read_headers, "Get a list of headers");
 		.def("read_column",&CSVData::read_column_py,"Read a column")
 		.def("read_column", &CSVData::read_column_str, "Read a column")
+		.def("read_row", &CSVData::read_row_py, "Read a row from an index")
 		.def_property_readonly("headers",&CSVData::read_headers_py);
 }
