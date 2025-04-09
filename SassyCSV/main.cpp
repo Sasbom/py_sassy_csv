@@ -56,8 +56,10 @@ PYBIND11_MODULE(_SassyCSV, m) {
 	py::class_<CSVData, std::shared_ptr<CSVData>>(m, "CSVData")
 		.def(py::init<>())
 		//.def("read_headers", &CSVData::read_headers, "Get a list of headers");
-		.def("read_column",&CSVData::read_column_py,"Read a column")
+		.def("read_column", &CSVData::read_column_py, "Read a column")
 		.def("read_column", &CSVData::read_column_str, "Read a column")
 		.def("read_row", &CSVData::read_row_py, "Read a row from an index")
-		.def_property_readonly("headers",&CSVData::read_headers_py);
+		.def("add_id_column", &CSVData::add_ID_header, "Add an ID header")
+		.def_property_readonly("headers", &CSVData::read_headers_py)
+		.def_property_readonly("size", &CSVData::get_size);
 }

@@ -7,6 +7,8 @@
 #include <unordered_set>
 #include <variant>
 #include <memory>
+#include <functional>
+#include <optional>
 
 #define PYBIND11_CPP20
 #include <pybind11/pybind11.h>
@@ -17,16 +19,27 @@ namespace py = pybind11;
 using CSV_datavar = std::variant<std::string, int, double>;
 using CSV_headervar = std::variant<std::string_view, std::vector<std::string_view>>;
 
+
+
+
 struct CSVData;
 
 struct CSVEntry : std::enable_shared_from_this<CSVEntry> {
-	std::shared_ptr<CSVData> parent;
+	using CSV_function = std::function<void(CSVEntry*)>;
+	using CSV_funcopt = std::optional<CSV_function>;
+	using data_t = std::vector <std::shared_ptr<CSVEntry>>;
+
 	CSV_datavar data{};
-	int row{};
-	int column{};
+	data_t* origin{ nullptr };
 	//void _print_data();
 	CSVEntry(CSV_datavar const& data);
 	
+	CSV_funcopt func{};
+	void update_data();
+
+	int index{};
+	void deduce_index();
+
 	py::object py_read();
 	py::str strtype();
 	void set_data(CSV_datavar const & data);
@@ -46,20 +59,24 @@ struct CSVRow {
 	std::unordered_map<std::string_view, CSVEntry> data;
 };
 
-struct CSVData: std::enable_shared_from_this<CSVData> {
+struct CSVData : std::enable_shared_from_this<CSVData> {
 	using data_t = std::vector <std::shared_ptr<CSVEntry>>;
-	
+
 	std::vector<std::string> headers{};
 	int header_count{};
 	std::unordered_map<std::string, data_t> data{};
 
 	int size{};
+	int get_size();
 
 	std::vector<std::string> read_headers();
 	py::object read_headers_py();
 	data_t read_column_str(std::string const & key);
-	CSVData::data_t read_column_py(py::tuple tup_key);
+	data_t read_column_py(py::tuple tup_key);
 	py::dict read_row_py(int index);
+	data_t read_row_elements(int index);
+
+	void add_ID_header();
 };
 
 struct CSVParser {

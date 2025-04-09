@@ -5,6 +5,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/typing.h>
 #include <pybind11/stl.h>
+#include <pybind11/functional.h>
 #include <memory>
 #include <fstream>
 #include <exception>
@@ -18,7 +19,26 @@ using namespace py::literals;
 // Entry
 CSVEntry::CSVEntry(CSV_datavar const& data) : data{ data } {};
 
+void CSVEntry::deduce_index() {
+	int c{};
+	if (this->origin == nullptr) {
+		return;
+	}
+	for (auto& el : *this->origin) {
+		if (this->shared_from_this() == el) {
+			this->index = c;
+			return;
+		}
+		c++;
+	}
+}
+
 // Data
+
+int CSVData::get_size() {
+	return this->size;
+}
+
 std::vector<std::string> CSVData::read_headers() {
 	return this->headers;
 }
@@ -66,6 +86,21 @@ CSVData::data_t CSVData::read_column_py(py::tuple tuple_key) {
 	return this->data.at(collect);
 }
 
+CSVData::data_t CSVData::read_row_elements(int index) {
+	if (index < 0) {
+		index = (this->size - 1) - index;
+	}
+	if (index < 0 || index >(this->size - 1)) {
+		throw std::runtime_error("Requested row not in range.");
+	}
+	CSVData::data_t vec{};
+	for (auto el : this->headers) {
+		std::shared_ptr<CSVEntry> data = this->data.at(el)[index];
+		vec.push_back(data);
+	}
+	return vec;
+}
+
 py::dict CSVData::read_row_py(int index) {
 	if (index < 0) {
 		index = (this->size - 1) - index;
@@ -94,6 +129,32 @@ py::dict CSVData::read_row_py(int index) {
 	}
 
 	return d;
+}
+
+// functional functionality
+void CSVData::add_ID_header() {
+	std::string h{};
+	for (int i{1}; i < this->header_count ; i++) {
+		h += '\x1f';
+	}
+	h += "ID";
+
+	this->headers.push_back(h);
+	auto vec = new std::vector<std::shared_ptr<CSVEntry>>{};
+	this->data.insert({ h, *vec });
+	
+	auto f = [](CSVEntry* e) {
+		e->data = (std::string("# ") + std::to_string(e->index));
+	};
+
+	auto& d_vec = this->data.at(h);
+	for (std::size_t i{}; i < this->size; i++) {
+		auto entry = std::make_shared<CSVEntry>(0);
+
+		entry->origin = &d_vec;
+		entry->func = f;
+		d_vec.push_back(entry);
+	}
 }
 
 // Parser
@@ -173,8 +234,18 @@ CSVParser::CSVParser(
 
 // class member functions
 // Entry
+
+void CSVEntry::update_data() {
+	if (this->func) {
+		this->deduce_index();
+		CSV_function f = this->func.value();
+		f(this);
+	}
+}
+
 py::object CSVEntry::py_read() {
 	// using CSV_datavar = std::variant<std::string_view, int, double>;
+	this->update_data();
 	switch (data.index()) {
 	case 0:
 		return py::str(std::get<0>(data));
@@ -188,6 +259,7 @@ py::object CSVEntry::py_read() {
 
 void CSVEntry::set_data(CSV_datavar const& data) {
 	this->data = data;
+	this->update_data();
 }
 
 py::str CSVEntry::strtype() {
@@ -349,6 +421,7 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 						py::print(header_entry,">", entry->py_read());
 						c += 1;
 						auto& vec = csv_data->data.at(header_entry);
+						entry->origin = &vec;
 						vec.push_back(entry);
 					}
 					size += 1;
