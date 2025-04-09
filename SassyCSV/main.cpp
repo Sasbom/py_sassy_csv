@@ -60,6 +60,7 @@ PYBIND11_MODULE(_SassyCSV, m) {
 		.def("read_column", &CSVData::read_column_str, "Read a column")
 		.def("read_row", &CSVData::read_row_py, "Read a row from an index")
 		.def("add_id_column", &CSVData::add_ID_header, "Add an ID header")
+		.def("add_ref_column", &CSVData::add_new_header, "Add a referenced header")
 		.def_property_readonly("headers", &CSVData::read_headers_py)
 		.def_property_readonly("size", &CSVData::get_size);
 }

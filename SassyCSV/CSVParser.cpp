@@ -157,6 +157,30 @@ void CSVData::add_ID_header() {
 	}
 }
 
+void CSVData::add_new_header(std::string const& name, std::string const& referenced_name) {
+	this->headers.push_back(name);
+	auto vec = new std::vector<std::shared_ptr<CSVEntry>>{};
+	this->data.insert({ name, *vec });
+
+	auto read = &this->data.at(referenced_name);
+
+	auto f = [from = read, ref = referenced_name](CSVEntry* e) {
+		auto idx = e->index;
+		auto other = (*from)[idx];
+		auto data = other->py_read();
+		e->data = (std::string("Referencing ") + ref + std::string(": ") + std::string(py::str(data)));
+	};
+
+	auto& d_vec = this->data.at(name);
+	for (std::size_t i{}; i < this->size; i++) {
+		auto entry = std::make_shared<CSVEntry>(0);
+
+		entry->origin = &d_vec;
+		entry->func = f;
+		d_vec.push_back(entry);
+	}
+}
+
 // Parser
 // Parser Options
 //CSVParser::CSVOptions::CSVOptions() {};

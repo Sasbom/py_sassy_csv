@@ -77,6 +77,7 @@ struct CSVData : std::enable_shared_from_this<CSVData> {
 	data_t read_row_elements(int index);
 
 	void add_ID_header();
+	void add_new_header(std::string const & name, std::string const& referenced_name);
 };
 
 struct CSVParser {
