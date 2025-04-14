@@ -63,6 +63,8 @@ PYBIND11_MODULE(_SassyCSV, m) {
 		.def("add_ref_column", &CSVData::add_new_header, "Add a referenced header")
 		.def("add_func_column", &CSVData::add_ref_func_header, "Add a computed header")
 		.def("add_func_column", &CSVData::add_acc_ref_func_header, "Add a computed header")
+		.def("add_func_column", &CSVData::add_ref_func_header_py, "Add a computed header")
+		.def("add_func_column", &CSVData::add_acc_ref_func_header_py, "Add a computed header")
 		.def("append_row",&CSVData::append_empty_row, "Add empty row")
 		.def("prepend_row", &CSVData::prepend_empty_row, "Add empty row at start")
 		.def_property_readonly("headers", &CSVData::read_headers_py)

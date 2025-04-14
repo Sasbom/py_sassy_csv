@@ -234,6 +234,11 @@ void CSVData::add_ref_func_header(std::string const& name, std::string const& ot
 	}
 }
 
+void CSVData::add_ref_func_header_py(std::string const& name, py::tuple const& other_name, CSVfunc_interface const& function) {
+	auto key =keytuple_to_str(other_name);
+	this->add_ref_func_header(name, key, function);
+}
+
 void CSVData::add_acc_ref_func_header(std::string const& name, std::vector<std::string> const& other_names, CSVaccfunc_interface const& function) {
 	this->headers.push_back(name);
 	auto vec = new std::vector<std::shared_ptr<CSVEntry>>{};
@@ -263,6 +268,15 @@ void CSVData::add_acc_ref_func_header(std::string const& name, std::vector<std::
 		entry->func = f;
 		d_vec.push_back(entry);
 	}
+}
+
+void CSVData::add_acc_ref_func_header_py(std::string const& name, std::vector<py::tuple> const& other_names, CSVaccfunc_interface const& function) {
+	std::vector<std::string> keys{};
+	for (auto& n : other_names) {
+		keys.push_back(keytuple_to_str(n));
+	}
+
+	this->add_acc_ref_func_header(name, keys, function);
 }
 
 // Parser

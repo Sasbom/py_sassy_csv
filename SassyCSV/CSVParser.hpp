@@ -83,7 +83,9 @@ struct CSVData : std::enable_shared_from_this<CSVData> {
 	void append_empty_row();
 	void prepend_empty_row();
 	void add_ref_func_header(std::string const& name, std::string const& other_name, CSVfunc_interface const& function);
+	void add_ref_func_header_py(std::string const& name, py::tuple const& other_name, CSVfunc_interface const& function);
 	void add_acc_ref_func_header(std::string const& name, std::vector<std::string> const& other_names, CSVaccfunc_interface const& function);
+	void add_acc_ref_func_header_py(std::string const& name, std::vector<py::tuple> const& other_names, CSVaccfunc_interface const& function);
 };
 
 struct CSVParser {

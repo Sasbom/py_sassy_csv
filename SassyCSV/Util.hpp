@@ -4,6 +4,9 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <pybind11/pybind11.h>
+
+namespace py = pybind11;
 
 std::vector<std::string> split_str(std::string& str, char delim = '\x1f') {
     std::vector<std::string> vec{};
@@ -21,5 +24,20 @@ std::vector<std::string> split_str(std::string& str, char delim = '\x1f') {
     }
     return vec;
 }
+
+std::string keytuple_to_str(py::tuple const & tup) {
+    std::size_t size = tup.size();
+    std::string collect{};
+
+    for (std::size_t i{ 0 }; i < size; i++) {
+        collect += std::string(py::str(tup[i]));
+
+        if (i < size - 1) {
+            collect += '\x1f';
+        }
+    }
+    return collect;
+}
+
 
 #endif
