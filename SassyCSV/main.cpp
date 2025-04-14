@@ -60,13 +60,15 @@ PYBIND11_MODULE(_SassyCSV, m) {
 		.def("read_column", &CSVData::read_column_str, "Read a column")
 		.def("read_row", &CSVData::read_row_py, "Read a row from an index")
 		.def("add_id_column", &CSVData::add_ID_header, "Add an ID header")
-		.def("add_ref_column", &CSVData::add_new_header, "Add a referenced header")
+		.def("add_id_column", &CSVData::add_ID_header_py, "Add an ID header")
+		//.def("add_ref_column", &CSVData::add_new_header, "Add a referenced header")
 		.def("add_func_column", &CSVData::add_ref_func_header, "Add a computed header")
 		.def("add_func_column", &CSVData::add_acc_ref_func_header, "Add a computed header")
 		.def("add_func_column", &CSVData::add_ref_func_header_py, "Add a computed header")
 		.def("add_func_column", &CSVData::add_acc_ref_func_header_py, "Add a computed header")
-		.def("append_row",&CSVData::append_empty_row, "Add empty row")
+		.def("append_row", &CSVData::append_empty_row, "Add empty row")
 		.def("prepend_row", &CSVData::prepend_empty_row, "Add empty row at start")
 		.def_property_readonly("headers", &CSVData::read_headers_py)
-		.def_property_readonly("size", &CSVData::get_size);
+		.def_property_readonly("size", &CSVData::get_size)
+		.def_property_readonly("formatted", &CSVData::format_pretty);
 }

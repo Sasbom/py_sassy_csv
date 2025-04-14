@@ -39,5 +39,40 @@ std::string keytuple_to_str(py::tuple const & tup) {
     return collect;
 }
 
+std::size_t longest_entry(std::vector<std::string>& entries) {
+    std::size_t maxsize{ 0 };
+    for (auto& entry : entries) {
+        if (maxsize < entry.size()) {
+            maxsize = entry.size();
+        }
+    }
+    return maxsize;
+}
+
+void rightpad_string(std::string& string, std::size_t desired_length) {
+    while (string.size() < desired_length) {
+        string.push_back(' ');
+    }
+}
+
+void exclude_char_string(std::string& string, char c = '\n') {
+    while (string.find(c) != string.npos) {
+        auto pos = string.find(c);
+        string.replace(string.begin() + pos, string.begin() + pos + 1, "");
+    }
+}
+
+std::string entry_as_string(std::shared_ptr<CSVEntry>& entry) {
+    auto& data = entry->data;
+
+    switch (data.index()) {
+    case 0:
+        return std::get<0>(data);
+    case 1:
+        return std::to_string(std::get<1>(data));
+    case 2:
+        return std::to_string(std::get<2>(data));
+    }
+}
 
 #endif

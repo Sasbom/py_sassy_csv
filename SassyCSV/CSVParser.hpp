@@ -78,14 +78,17 @@ struct CSVData : std::enable_shared_from_this<CSVData> {
 	py::dict read_row_py(int index);
 	data_t read_row_elements(int index);
 
-	void add_ID_header();
+	void add_ID_header(std::string const& name, bool as_int);
+	void add_ID_header_py(py::tuple const& name, bool as_int);
 	void add_new_header(std::string const & name, std::string const& referenced_name);
 	void append_empty_row();
 	void prepend_empty_row();
 	void add_ref_func_header(std::string const& name, std::string const& other_name, CSVfunc_interface const& function);
-	void add_ref_func_header_py(std::string const& name, py::tuple const& other_name, CSVfunc_interface const& function);
+	void add_ref_func_header_py(py::tuple const& name, py::tuple const& other_name, CSVfunc_interface const& function);
 	void add_acc_ref_func_header(std::string const& name, std::vector<std::string> const& other_names, CSVaccfunc_interface const& function);
-	void add_acc_ref_func_header_py(std::string const& name, std::vector<py::tuple> const& other_names, CSVaccfunc_interface const& function);
+	void add_acc_ref_func_header_py(py::tuple const& name, std::vector<py::tuple> const& other_names, CSVaccfunc_interface const& function);
+
+	std::string format_pretty();
 };
 
 struct CSVParser {
@@ -129,6 +132,7 @@ struct CSVParser {
 		void set_float_ignore(std::string_view const& float_ignore);
 		void set_expected_delimiters(int const& expected_delimiters);
 		void set_header_lines(int const& header_lines);
+
 	};
 
 	CSVOptions options{};

@@ -132,20 +132,55 @@ py::dict CSVData::read_row_py(int index) {
 }
 
 // functional functionality
-void CSVData::add_ID_header() {
+void CSVData::add_ID_header(std::string const & name, bool as_int = false) {
 	std::string h{};
 	for (int i{1}; i < this->header_count ; i++) {
 		h += '\x1f';
 	}
-	h += "ID";
+	h += name;
 
 	this->headers.push_back(h);
 	auto vec = new std::vector<std::shared_ptr<CSVEntry>>{};
 	this->data.insert({ h, *vec });
 	
-	auto f = [](CSVEntry* e) {
-		e->data = (std::string("# ") + std::to_string(e->index));
+	
+	auto f = [nr = as_int](CSVEntry* e) {
+		if (!nr) {
+			e->data = (std::string("# ") + std::to_string(e->index));
+		}
+		else {
+			e->data = e->index;
+		}
 	};
+
+
+	auto& d_vec = this->data.at(h);
+	for (std::size_t i{}; i < this->size; i++) {
+		auto entry = std::make_shared<CSVEntry>(0);
+
+		entry->origin = &d_vec;
+		entry->func = f;
+		d_vec.push_back(entry);
+	}
+}
+
+void CSVData::add_ID_header_py(py::tuple const& name, bool as_int = false) {
+	auto h = keytuple_to_str(name);
+	
+	this->headers.push_back(h);
+	auto vec = new std::vector<std::shared_ptr<CSVEntry>>{};
+	this->data.insert({ h, *vec });
+
+
+	auto f = [nr = as_int](CSVEntry* e) {
+		if (!nr) {
+			e->data = (std::string("# ") + std::to_string(e->index));
+		}
+		else {
+			e->data = e->index;
+		}
+		};
+
 
 	auto& d_vec = this->data.at(h);
 	for (std::size_t i{}; i < this->size; i++) {
@@ -234,9 +269,10 @@ void CSVData::add_ref_func_header(std::string const& name, std::string const& ot
 	}
 }
 
-void CSVData::add_ref_func_header_py(std::string const& name, py::tuple const& other_name, CSVfunc_interface const& function) {
+void CSVData::add_ref_func_header_py(py::tuple const& name, py::tuple const& other_name, CSVfunc_interface const& function) {
 	auto key =keytuple_to_str(other_name);
-	this->add_ref_func_header(name, key, function);
+	auto nname = keytuple_to_str(name);
+	this->add_ref_func_header(nname, key, function);
 }
 
 void CSVData::add_acc_ref_func_header(std::string const& name, std::vector<std::string> const& other_names, CSVaccfunc_interface const& function) {
@@ -270,13 +306,77 @@ void CSVData::add_acc_ref_func_header(std::string const& name, std::vector<std::
 	}
 }
 
-void CSVData::add_acc_ref_func_header_py(std::string const& name, std::vector<py::tuple> const& other_names, CSVaccfunc_interface const& function) {
+void CSVData::add_acc_ref_func_header_py(py::tuple const& name, std::vector<py::tuple> const& other_names, CSVaccfunc_interface const& function) {
 	std::vector<std::string> keys{};
+	auto nname = keytuple_to_str(name);
 	for (auto& n : other_names) {
+		std::cout << keytuple_to_str(n) << "\n";
 		keys.push_back(keytuple_to_str(n));
 	}
 
-	this->add_acc_ref_func_header(name, keys, function);
+	this->add_acc_ref_func_header(nname, keys, function);
+}
+
+std::string CSVData::format_pretty() {
+	std::string collect{};
+
+	std::vector<std::size_t> widths{};
+	std::vector<std::vector<std::string>> column_data{};
+	for (auto& el : this->headers) {
+		auto entrs = split_str(el);
+		for (auto& entry : this->data.at(el)) {
+			entrs.push_back(entry_as_string(entry));
+		}
+		auto width = longest_entry(entrs);
+		widths.push_back(width);
+
+		for (auto& str : entrs) {
+			exclude_char_string(str);
+			rightpad_string(str, width);
+		}
+
+		column_data.push_back(entrs);
+	}
+
+	std::size_t acc_width{ 0 };
+	std::size_t c{ 0 };
+	for (auto& w : widths) {
+		acc_width += w;
+
+		// account for pipes
+		if ((c == 0) || (c == widths.size()-1)) {
+			acc_width += 2;
+		}
+		else {
+			acc_width += 3;
+		}
+		c++;
+	}
+	
+
+	for (std::size_t i{ 0 }; i < this->size + this->header_count; i++) {
+		collect += "| ";
+
+		for (auto v = std::begin(column_data); v != std::end(column_data); v++ ) {
+			if (v == std::end(column_data) - 1){
+				collect += (*v)[i] + " |";
+			}
+			else {
+				collect += (*v)[i] + " | ";
+			}
+		}
+		collect += '\n';
+		
+		if ((i == header_count - 1) || i == (this->size + this->header_count - 1)) {
+			std::size_t c = 0;
+			while (c < acc_width) {
+				collect += '-';
+				c++;
+			}
+			collect += '\n';
+		}
+	}
+	return collect;
 }
 
 // Parser
@@ -754,3 +854,4 @@ std::shared_ptr<CSVData> CSVParser::parse_noquotes(std::string_view const& file)
 	std::cout << "done parsing? done parsing.\n";
 	return csv_data;
 }
+
