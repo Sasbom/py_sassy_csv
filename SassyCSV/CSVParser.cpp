@@ -300,6 +300,11 @@ py::str CSVEntry::strtype() {
 // parser
 
 std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
+	if (options.quote.empty()) {
+		std::cout << "No quotes. Parsing without.\n";
+		return this->parse_noquotes(file);
+	}
+
 	std::shared_ptr<CSVData> csv_data = std::make_shared<CSVData>();
 	int headers = options.header_lines;
 	int cur_header = 0;
@@ -318,7 +323,7 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 	std::ifstream file_stream{};
 	file_stream.open(file.data());
 	char cur_char{};
-	std::string collect;
+	std::string collect{};
 	std::vector<std::string> collect_line{};
 
 	char quote = options.quote.data()[0];
@@ -475,6 +480,179 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 	
 	csv_data->size = size;
 	
+	std::cout << "done parsing? done parsing.\n";
+	return csv_data;
+}
+
+std::shared_ptr<CSVData> CSVParser::parse_noquotes(std::string_view const& file) {
+	std::shared_ptr<CSVData> csv_data = std::make_shared<CSVData>();
+	int headers = options.header_lines;
+	int cur_header = 0;
+	int idx_header = 0;
+	bool get_headers = true;
+	// we can already set the header count for unrolling header vector
+	csv_data->header_count = headers;
+
+	int expected_delimiters = options.expected_delimiters;
+	int delimiters_togo = 0;
+	// sentinel value should indicate comma counting	
+	bool count_commas = (expected_delimiters == -1);
+	if (count_commas)
+		expected_delimiters = 0;
+
+	std::ifstream file_stream{};
+	file_stream.open(file.data());
+	char cur_char{};
+	std::string collect{};
+	std::vector<std::string> collect_line{};
+
+	char delimiter = options.delimiter.data()[0];
+	char newline = options.newline.data()[0];
+
+	char float_delimiter = options.float_delimiter.data()[0];
+	char float_ignore = options.float_ignore.data()[0];
+
+	int size = 0;
+	std::cout << "reading file " << file << "\n";
+	while (file_stream) {
+		file_stream.get(cur_char);
+		//std::cout << std::string{ cur_char } << " ";
+		if (cur_char == delimiter || (cur_char == newline && count_commas) || (cur_char == newline && delimiters_togo == 1 && !count_commas) || file_stream.eof()) {
+			std::cout << "Delimiter\n";
+			if (cur_char == newline && collect.ends_with(delimiter)) {
+				collect.pop_back();
+			}
+
+			while (collect.starts_with(' ') || collect.starts_with('\n') || collect.starts_with('\t')) {
+				collect.erase(0, 1);
+			}
+			while (collect.ends_with(' ') || collect.ends_with('\n') || collect.ends_with('\t')) {
+				collect.pop_back();
+			}
+
+
+			collect_line.push_back(collect);
+			py::print("collect:", collect);
+			collect.clear();
+
+			// when a word gets added, that's the moment we count a delimiter.
+			if (count_commas) {
+				expected_delimiters += 1;
+			}
+			else {
+				delimiters_togo -= 1;
+				if (delimiters_togo < 0 && !file_stream.eof()) {
+					std::cout << delimiters_togo << " <- Delimiters to go\n";
+					throw std::runtime_error("Delimiters amount need to be similar across lines");
+				}
+			}
+			
+			if (cur_char != newline)
+				continue;
+			else {
+				std::cout << "new line!" << get_headers << " " << delimiters_togo << "\n";
+			}
+			
+		}
+
+		if (cur_char == newline) {
+			if (cur_header < headers && get_headers) {
+				std::cout << "getting headers \n";
+				// header phase
+				if (cur_header == 0) {
+					count_commas = false;
+					this->options.expected_delimiters = expected_delimiters;
+					//cur_header += 1;
+				}
+				if (cur_header == headers - 1) {
+					std::cout << "stopping header gather \n";
+					get_headers = false;
+
+				}
+				if (delimiters_togo == 0) {
+					std::cout << "collecting headers" << cur_header << headers << "\n";
+					bool append = (cur_header > 0);
+					int c{ 0 };
+					for (auto el : collect_line) {
+						py::print(el, get_headers, append);
+						if (!append) {
+							csv_data->headers.push_back(el);
+						}
+						else {
+							(&csv_data->headers.data()[c])->append('\x1f' + el);
+							std::cout << csv_data->headers.data()[c] << "\n";
+
+						}
+						// when collection is done, compose actual headers.
+						if (!get_headers) {
+							auto el_new = csv_data->headers.data()[c];
+							if (csv_data->data.contains(el)) {
+								// this will eventually have to be solved by somehow concatenating multiple headers.
+								// a double header with
+								// "Polish","Blocking"
+								// "Assigned","Assigned"
+								// is still valid, just need to find some uncommon character to split them.
+								throw std::runtime_error("Headers with same name encountered.");
+							}
+							auto vec = new std::vector<std::shared_ptr<CSVEntry>>{};
+							std::cout << "inserting with key: " << el_new << "\n";
+							csv_data->data.insert({ el_new, *vec });
+						}
+						c += 1;
+					}
+					collect_line.clear();
+					cur_header += 1;
+					delimiters_togo = expected_delimiters;
+					continue;
+				}
+			}
+			else {
+				// reset delimiters if appropriate
+				if (delimiters_togo == 0 || file_stream.eof()) {
+					std::cout << "adding line\n";
+					delimiters_togo = expected_delimiters;
+					int c = 0;
+
+					for (auto& el : collect_line) {
+						CSV_datavar proc_el{};
+						if (options.parse_numbers) {
+							proc_el = process_entry(el, float_ignore, float_delimiter);
+						}
+						else {
+							proc_el = el;
+						}
+						auto entry = std::make_shared<CSVEntry>(
+							proc_el
+						);
+
+						auto header_entry = csv_data->headers[c];
+						py::print(header_entry, ">", entry->py_read());
+						c += 1;
+						auto& vec = csv_data->data.at(header_entry);
+						entry->origin = &vec;
+						vec.push_back(entry);
+					}
+					size += 1;
+					collect_line.clear();
+					continue;
+				}
+				std::cout << "current char is newline\n";
+				collect += cur_char;
+				continue;
+			}
+
+		}
+		if (collect.ends_with(delimiter) && cur_char == newline) {
+			continue;
+		}
+
+		// passed all edge cases, proceed collecting ...
+		collect += cur_char;
+	}
+	file_stream.close();
+
+	csv_data->size = size;
+
 	std::cout << "done parsing? done parsing.\n";
 	return csv_data;
 }

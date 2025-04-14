@@ -140,6 +140,7 @@ struct CSVParser {
 	);
 
 	std::shared_ptr<CSVData> parse(std::string_view const& file_path);
+	std::shared_ptr<CSVData> parse_noquotes(std::string_view const& file_path);
 };
 
 
