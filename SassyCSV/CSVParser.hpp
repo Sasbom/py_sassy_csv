@@ -61,7 +61,9 @@ struct CSVRow {
 
 struct CSVData : std::enable_shared_from_this<CSVData> {
 	using data_t = std::vector <std::shared_ptr<CSVEntry>>;
-
+	// wanting to accept a python function of `def function(other_value, index): ...`
+	using CSVfunc_interface = std::function<CSV_datavar(CSV_datavar, int)>; 
+	using CSVaccfunc_interface = std::function<CSV_datavar(std::vector<CSV_datavar>, int)>;
 	std::vector<std::string> headers{};
 	int header_count{};
 	std::unordered_map<std::string, data_t> data{};
@@ -78,6 +80,10 @@ struct CSVData : std::enable_shared_from_this<CSVData> {
 
 	void add_ID_header();
 	void add_new_header(std::string const & name, std::string const& referenced_name);
+	void append_empty_row();
+	void prepend_empty_row();
+	void add_ref_func_header(std::string const& name, std::string const& other_name, CSVfunc_interface const& function);
+	void add_acc_ref_func_header(std::string const& name, std::vector<std::string> const& other_names, CSVaccfunc_interface const& function);
 };
 
 struct CSVParser {

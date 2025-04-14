@@ -181,6 +181,90 @@ void CSVData::add_new_header(std::string const& name, std::string const& referen
 	}
 }
 
+void CSVData::append_empty_row() {
+
+	for (auto& h : this->headers) {
+
+		auto& vec = this->data.at(h);
+		auto entry = std::make_shared<CSVEntry>("");
+		entry->func = vec[0]->func; // copy func if present (auto handled by optional)
+		entry->origin = &vec;
+
+		vec.push_back(entry);
+		this->size++;
+	}
+}
+
+void CSVData::prepend_empty_row() {
+
+	for (auto& h : this->headers) {
+
+		auto& vec = this->data.at(h);
+		auto entry = std::make_shared<CSVEntry>("");
+		entry->func = vec[0]->func; // copy func if present (auto handled by optional)
+		entry->origin = &vec;
+
+		vec.emplace(std::begin(vec), entry);
+		this->size++;
+	}
+}
+
+void CSVData::add_ref_func_header(std::string const& name, std::string const& other_name, CSVfunc_interface const& function) {
+	this->headers.push_back(name);
+	auto vec = new std::vector<std::shared_ptr<CSVEntry>>{};
+	this->data.insert({ name, *vec });
+
+	auto read = &this->data.at(other_name);
+
+	auto f = [from = read, ref = other_name, func = function](CSVEntry* e) {
+		auto idx = e->index;
+		auto other = (*from)[idx];
+		other->update_data();
+		auto data = other->data;
+		e->data = func(data,idx);
+	};
+
+	auto& d_vec = this->data.at(name);
+	for (std::size_t i{}; i < this->size; i++) {
+		auto entry = std::make_shared<CSVEntry>(0);
+
+		entry->origin = &d_vec;
+		entry->func = f;
+		d_vec.push_back(entry);
+	}
+}
+
+void CSVData::add_acc_ref_func_header(std::string const& name, std::vector<std::string> const& other_names, CSVaccfunc_interface const& function) {
+	this->headers.push_back(name);
+	auto vec = new std::vector<std::shared_ptr<CSVEntry>>{};
+	this->data.insert({ name, *vec });
+
+	std::vector<data_t*> reads{};
+	for (auto& name : other_names) {
+		reads.push_back(&this->data.at(name));
+	}
+
+	auto f = [froms = reads, refs = other_names, func = function](CSVEntry* e) {
+		auto idx = e->index;
+		std::vector<CSV_datavar> data{};
+		for (auto from : froms) {
+			auto other = (*from)[idx];
+			other->update_data();
+			data.push_back(other->data);
+		}
+		e->data = func(data, idx);
+	};
+
+	auto& d_vec = this->data.at(name);
+	for (std::size_t i{}; i < this->size; i++) {
+		auto entry = std::make_shared<CSVEntry>(0);
+
+		entry->origin = &d_vec;
+		entry->func = f;
+		d_vec.push_back(entry);
+	}
+}
+
 // Parser
 // Parser Options
 //CSVParser::CSVOptions::CSVOptions() {};
@@ -354,7 +438,7 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 			if (collect.ends_with(quote) && collect.starts_with(quote)) {
 				// This check adds tolerance for when a line ends with a quote,
 				// but is actually properly terminated and continued on the next line.
-				if (!(cur_char == newline && delimiters_togo >= 0)) {
+				if (!(cur_char == newline && delimiters_togo > 1) || (cur_char == newline && get_headers)) {
 					collect.pop_back();
 					collect.erase(0, 1);
 					collect_line.push_back(collect);
@@ -377,7 +461,7 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 				if (cur_char != newline)
 					continue;
 				else {
-					std::cout << "new line!" << get_headers << " " << delimiters_togo << "\n";
+					std::cout << "new line!" << get_headers << " " << delimiters_togo << " " << expected_delimiters << "\n";
 				}
 			}
 		}
