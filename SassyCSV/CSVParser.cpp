@@ -347,20 +347,26 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 			}
 			
 			if (collect.ends_with(quote) && collect.starts_with(quote)) {
-				collect.pop_back();
-				collect.erase(0,1);
-				collect_line.push_back(collect);
-				py::print("collect:", collect);
-				collect.clear();
-				
-				// when a word gets added, that's the moment we count a delimiter.
-				if (count_commas) {
-					expected_delimiters += 1;
-				}
-				else {
-					delimiters_togo -= 1;
-					if (delimiters_togo < 0) {
-						throw std::runtime_error("Delimiters amount need to be similar across lines");
+				// This check adds tolerance for when a line ends with a quote,
+				// but is actually properly terminated and continued on the next line.
+				if (!(cur_char == newline && delimiters_togo >= 0)) {
+					collect.pop_back();
+					collect.erase(0, 1);
+					collect_line.push_back(collect);
+					py::print("collect:", collect);
+					collect.clear();
+
+
+					// when a word gets added, that's the moment we count a delimiter.
+					if (count_commas) {
+						expected_delimiters += 1;
+					}
+					else {
+						delimiters_togo -= 1;
+						if (delimiters_togo < 0 && !file_stream.eof()) {
+							std::cout << delimiters_togo << " <- Delimiters to go\n";
+							throw std::runtime_error("Delimiters amount need to be similar across lines");
+						}
 					}
 				}
 				if (cur_char != newline)
