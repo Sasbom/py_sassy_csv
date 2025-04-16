@@ -23,6 +23,7 @@ using CSV_headervar = std::variant<std::string_view, std::vector<std::string_vie
 
 
 struct CSVData;
+struct CSVDataView;
 
 struct CSVEntry : std::enable_shared_from_this<CSVEntry> {
 	using CSV_function = std::function<void(CSVEntry*)>;
@@ -45,6 +46,8 @@ struct CSVEntry : std::enable_shared_from_this<CSVEntry> {
 	void set_data(CSV_datavar const & data);
 };
 
+// Result of parse, raw data along with extra references and modifications.
+// The flow would be parse -> add fields -> view -> add predicates -> export
 struct CSVData : std::enable_shared_from_this<CSVData> {
 	using data_t = std::vector <std::shared_ptr<CSVEntry>>;
 	// wanting to accept a python function of `def function(other_value, index): ...`
@@ -78,9 +81,25 @@ struct CSVData : std::enable_shared_from_this<CSVData> {
 	std::string format_pretty();
 };
 
-struct CSVDataView {
-	
+// A view
 
+
+struct CSVDataView: std::enable_shared_from_this<CSVDataView> {
+	using viewfunc_t = std::function<void(CSVDataView*)>;
+	// def predicate(header, index) -> bool
+	using predicate_func = std::function<bool(CSV_datavar ,std::string, std::size_t)>;
+
+	std::shared_ptr<CSVData> data;
+
+	std::unordered_set<std::string> exclude_headers{};
+	std::unordered_set<std::size_t> exclude_indices{};
+
+	std::vector<viewfunc_t> predicates{};
+
+	void reset_view();
+	void evaluate_predicates();
+
+	std::shared_ptr<CSVDataView> add_predicate(predicate_func const & func);
 };
 
 struct CSVParser {

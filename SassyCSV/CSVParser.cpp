@@ -394,7 +394,6 @@ std::string CSVData::format_pretty() {
 		c++;
 	}
 	
-
 	for (std::size_t i{ 0 }; i < this->size + this->header_count; i++) {
 		collect += "| ";
 
@@ -536,6 +535,45 @@ py::str CSVEntry::strtype() {
 	}
 	return py::none();
 }
+
+// View
+
+void CSVDataView::reset_view() {
+	this->exclude_headers.clear();
+	this->exclude_indices.clear();
+}
+
+void CSVDataView::evaluate_predicates() {
+	this->reset_view();
+
+	for (auto& f : this->predicates) {
+		f(this);
+	}
+}
+
+std::shared_ptr<CSVDataView> CSVDataView::add_predicate(predicate_func const& func) {
+	auto f = [filter = func](CSVDataView* view) {
+		auto& data = view->data;
+		for (auto& i : data->headers) {
+			std::size_t idx{0};
+			auto& vec = data->data.at(i);
+
+			for (auto el_it = std::begin(vec); el_it != std::end(vec); el_it++) {
+				auto& el = *el_it;
+				// entry, header, index
+				bool res = filter(el->data, i, idx);
+				if (!res) {
+					view->exclude_indices.insert(idx);
+				}
+
+				idx++;
+			}
+
+		}
+	};
+	return this->shared_from_this();
+}
+
 // parser
 
 std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
