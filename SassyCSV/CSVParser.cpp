@@ -131,6 +131,47 @@ py::dict CSVData::read_row_py(int index) {
 	return d;
 }
 
+py::dict CSVData::read_rows_py(py::slice const & slice) {
+	std::size_t start{};
+	std::size_t end{};
+	std::size_t step{};
+	std::size_t slice_len{};
+	slice.compute(this->size, &start, &end, &step, &slice_len);
+
+	auto d = py::dict{};
+
+	for (auto el : this->headers) {
+		
+		for (auto index = start; index < end; index += step) {
+			if (el.contains('\x1f')) {
+				auto els = split_str(el);
+				auto tup = py::tuple(els.size());
+				int c{ 0 };
+				for (auto els_el : els) {
+					tup[c] = els_el;
+					c++;
+				}
+				auto data = this->read_column_py(tup)[index];
+				if (!d.contains(tup)) {
+					d[tup] = py::list();
+				}
+
+				d[tup].cast<py::list>().append(data);
+			}
+			else {
+				auto data = this->read_column_str(el)[index];
+				if (!d.contains(py::str(el))) {
+					d[py::str(el)] = py::list();
+				}
+				d[py::str(el)].cast<py::list>().append(data);
+			}
+		}
+	}
+
+	return d;
+
+}
+
 // functional functionality
 void CSVData::add_ID_header(std::string const & name, bool as_int = false) {
 	std::string h{};

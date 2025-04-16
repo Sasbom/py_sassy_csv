@@ -45,20 +45,6 @@ struct CSVEntry : std::enable_shared_from_this<CSVEntry> {
 	void set_data(CSV_datavar const & data);
 };
 
-// Not sure about CSVColumn and CSVRow yet.
-struct CSVColumn {
-	int column{};
-	CSV_headervar key;
-	std::vector<CSVEntry> data;
-	//void _print_keys();
-};
-
-struct CSVRow {
-	int row{};
-	std::vector<std::string_view> keys;
-	std::unordered_map<std::string_view, CSVEntry> data;
-};
-
 struct CSVData : std::enable_shared_from_this<CSVData> {
 	using data_t = std::vector <std::shared_ptr<CSVEntry>>;
 	// wanting to accept a python function of `def function(other_value, index): ...`
@@ -76,6 +62,7 @@ struct CSVData : std::enable_shared_from_this<CSVData> {
 	data_t read_column_str(std::string const & key);
 	data_t read_column_py(py::tuple tup_key);
 	py::dict read_row_py(int index);
+	py::dict read_rows_py(py::slice const & slice);
 	data_t read_row_elements(int index);
 
 	void add_ID_header(std::string const& name, bool as_int);
@@ -89,6 +76,11 @@ struct CSVData : std::enable_shared_from_this<CSVData> {
 	void add_acc_ref_func_header_py(py::tuple const& name, std::vector<py::tuple> const& other_names, CSVaccfunc_interface const& function);
 
 	std::string format_pretty();
+};
+
+struct CSVDataView {
+	
+
 };
 
 struct CSVParser {
