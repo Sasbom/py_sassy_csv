@@ -310,7 +310,6 @@ void CSVData::add_acc_ref_func_header_py(py::tuple const& name, std::vector<py::
 	std::vector<std::string> keys{};
 	auto nname = keytuple_to_str(name);
 	for (auto& n : other_names) {
-		std::cout << keytuple_to_str(n) << "\n";
 		keys.push_back(keytuple_to_str(n));
 	}
 
@@ -328,23 +327,23 @@ std::string CSVData::format_pretty() {
 			entrs.push_back(entry_as_string(entry));
 		}
 		auto width = longest_entry(entrs);
-		widths.push_back(width);
 
 		for (auto& str : entrs) {
 			exclude_char_string(str);
 			rightpad_string(str, width);
 		}
 
+		widths.push_back(width);
 		column_data.push_back(entrs);
 	}
 
-	std::size_t acc_width{ 0 };
+	std::size_t acc_width{ 2 }; // init at 2 for starting "| "
 	std::size_t c{ 0 };
 	for (auto& w : widths) {
 		acc_width += w;
 
 		// account for pipes
-		if ((c == 0) || (c == widths.size()-1)) {
+		if (c == widths.size()-1) {
 			acc_width += 2;
 		}
 		else {
@@ -572,7 +571,7 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 						}
 					}
 				}
-				if (cur_char != newline)
+				if (cur_char != newline && !file_stream.eof())
 					continue;
 				else {
 					std::cout << "new line!" << get_headers << " " << delimiters_togo << " " << expected_delimiters << "\n";
@@ -580,7 +579,7 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 			}
 		}
 
-		if (cur_char == newline) {
+		if (cur_char == newline || file_stream.eof()) {
 			if (cur_header < headers && get_headers) {
 				std::cout << "getting headers \n";
 				// header phase
@@ -716,7 +715,7 @@ std::shared_ptr<CSVData> CSVParser::parse_noquotes(std::string_view const& file)
 		file_stream.get(cur_char);
 		//std::cout << std::string{ cur_char } << " ";
 		if (cur_char == delimiter || (cur_char == newline && count_commas) || (cur_char == newline && delimiters_togo == 1 && !count_commas) || file_stream.eof()) {
-			std::cout << "Delimiter\n";
+			//std::cout << "Delimiter\n";
 			if (cur_char == newline && collect.ends_with(delimiter)) {
 				collect.pop_back();
 			}
@@ -730,7 +729,7 @@ std::shared_ptr<CSVData> CSVParser::parse_noquotes(std::string_view const& file)
 
 
 			collect_line.push_back(collect);
-			py::print("collect:", collect);
+			py::print("collect:", collect, "collect line size",collect_line.size());
 			collect.clear();
 
 			// when a word gets added, that's the moment we count a delimiter.
@@ -745,15 +744,17 @@ std::shared_ptr<CSVData> CSVParser::parse_noquotes(std::string_view const& file)
 				}
 			}
 			
-			if (cur_char != newline)
+			if (cur_char != newline && !file_stream.eof()) {
+				std::cout << "continuing\n";
 				continue;
+			}
 			else {
-				std::cout << "new line!" << get_headers << " " << delimiters_togo << "\n";
+				std::cout << "new line or EOF!" << get_headers << " " << delimiters_togo << "\n";
 			}
 			
 		}
 
-		if (cur_char == newline) {
+		if (cur_char == newline || file_stream.eof()) {
 			if (cur_header < headers && get_headers) {
 				std::cout << "getting headers \n";
 				// header phase
@@ -806,6 +807,7 @@ std::shared_ptr<CSVData> CSVParser::parse_noquotes(std::string_view const& file)
 			}
 			else {
 				// reset delimiters if appropriate
+				std::cout << "attempting add | EOF:" << file_stream.eof() << "\n";
 				if (delimiters_togo == 0 || file_stream.eof()) {
 					std::cout << "adding line\n";
 					delimiters_togo = expected_delimiters;
