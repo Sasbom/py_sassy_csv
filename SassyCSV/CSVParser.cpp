@@ -324,6 +324,7 @@ std::string CSVData::format_pretty() {
 	for (auto& el : this->headers) {
 		auto entrs = split_str(el);
 		for (auto& entry : this->data.at(el)) {
+			entry->update_data();
 			entrs.push_back(entry_as_string(entry));
 		}
 		auto width = longest_entry(entrs);
