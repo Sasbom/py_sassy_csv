@@ -55,7 +55,7 @@ void rightpad_string(std::string& string, std::size_t desired_length) {
     }
 }
 
-void exclude_char_string(std::string& string, char c = '\n', char const * r = "¶") {
+void exclude_char_string(std::string& string, char c = '\n', char const * r = "\\") {
     while (string.find(c) != string.npos) {
         auto pos = string.find(c);
         string.replace(string.begin() + pos, string.begin() + pos + 1, r);
