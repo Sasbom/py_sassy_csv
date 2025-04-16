@@ -49,6 +49,22 @@ std::size_t longest_entry(std::vector<std::string>& entries) {
     return maxsize;
 }
 
+std::size_t longest_entry_exclude(std::vector<std::string>& entries, std::unordered_set<std::size_t>& excludes ) {
+    std::size_t maxsize{ 0 };
+    std::size_t c{ 0 };
+    for (auto& entry : entries) {
+        if (excludes.contains(c)) {
+            c++;
+            continue;
+        }
+        if (maxsize < entry.size()) {
+            maxsize = entry.size();
+        }
+        c++;
+    }
+    return maxsize;
+}
+
 void rightpad_string(std::string& string, std::size_t desired_length) {
     while (string.size() < desired_length) {
         string.push_back(' ');

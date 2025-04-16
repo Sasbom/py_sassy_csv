@@ -79,6 +79,8 @@ struct CSVData : std::enable_shared_from_this<CSVData> {
 	void add_acc_ref_func_header_py(py::tuple const& name, std::vector<py::tuple> const& other_names, CSVaccfunc_interface const& function);
 
 	std::string format_pretty();
+
+	std::shared_ptr<CSVDataView> generate_view();
 };
 
 // A view
@@ -100,6 +102,8 @@ struct CSVDataView: std::enable_shared_from_this<CSVDataView> {
 	void evaluate_predicates();
 
 	std::shared_ptr<CSVDataView> add_predicate(predicate_func const & func);
+
+	std::string format_pretty_view();
 };
 
 struct CSVParser {

@@ -419,6 +419,12 @@ std::string CSVData::format_pretty() {
 	return collect;
 }
 
+std::shared_ptr<CSVDataView> CSVData::generate_view() {
+	auto view = std::make_shared<CSVDataView>();
+	view->data = shared_from_this();
+	return view;
+}
+
 // Parser
 // Parser Options
 //CSVParser::CSVOptions::CSVOptions() {};
@@ -560,6 +566,7 @@ std::shared_ptr<CSVDataView> CSVDataView::add_predicate(predicate_func const& fu
 
 			for (auto el_it = std::begin(vec); el_it != std::end(vec); el_it++) {
 				auto& el = *el_it;
+				el->update_data();
 				// entry, header, index
 				bool res = filter(el->data, i, idx);
 				if (!res) {
@@ -571,7 +578,82 @@ std::shared_ptr<CSVDataView> CSVDataView::add_predicate(predicate_func const& fu
 
 		}
 	};
+	this->predicates.push_back(f);
 	return this->shared_from_this();
+}
+
+std::string CSVDataView::format_pretty_view() {
+	std::string collect{};
+
+	std::vector<std::size_t> widths{};
+	std::vector<std::vector<std::string>> column_data{};
+
+	this->evaluate_predicates();
+
+	auto size = this->data->size - this->exclude_indices.size();
+
+
+	for (auto& el : this->data->headers) {
+		auto entrs = split_str(el);
+		std::size_t idx{ 0 };
+		for (auto& entry : this->data->data.at(el)) {
+			if (exclude_indices.contains(idx)) {
+				idx++;
+				continue;
+			}
+			entry->update_data();
+			entrs.push_back(entry_as_string(entry));
+			idx++;
+		}
+		auto width = longest_entry_exclude(entrs,this->exclude_indices);
+
+		for (auto& str : entrs) {
+			exclude_char_string(str);
+			rightpad_string(str, width);
+		}
+
+		widths.push_back(width);
+		column_data.push_back(entrs);
+	}
+
+	std::size_t acc_width{ 2 }; // init at 2 for starting "| "
+	std::size_t c{ 0 };
+	for (auto& w : widths) {
+		acc_width += w;
+
+		// account for pipes
+		if (c == widths.size() - 1) {
+			acc_width += 2;
+		}
+		else {
+			acc_width += 3;
+		}
+		c++;
+	}
+
+	for (std::size_t i{ 0 }; i < size + this->data->header_count; i++) {
+		collect += "| ";
+
+		for (auto v = std::begin(column_data); v != std::end(column_data); v++) {
+			if (v == std::end(column_data) - 1) {
+				collect += (*v)[i] + " |";
+			}
+			else {
+				collect += (*v)[i] + " | ";
+			}
+		}
+		collect += '\n';
+
+		if ((i == this->data->header_count - 1) || i == (size + this->data->header_count - 1)) {
+			std::size_t c = 0;
+			while (c < acc_width) {
+				collect += '-';
+				c++;
+			}
+			collect += '\n';
+		}
+	}
+	return collect;
 }
 
 // parser

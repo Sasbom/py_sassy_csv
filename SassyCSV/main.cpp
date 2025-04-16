@@ -71,5 +71,11 @@ PYBIND11_MODULE(_SassyCSV, m) {
 		.def("prepend_row", &CSVData::prepend_empty_row, "Add empty row at start")
 		.def_property_readonly("headers", &CSVData::read_headers_py)
 		.def_property_readonly("size", &CSVData::get_size)
-		.def_property_readonly("formatted", &CSVData::format_pretty);
+		.def_property_readonly("formatted", &CSVData::format_pretty)
+		.def("view",&CSVData::generate_view,"Provide a view into the world of CSV data.");
+	py::class_<CSVDataView, std::shared_ptr<CSVDataView>>(m, "CSVDataView")
+		.def(py::init<>())
+		.def("filter_func", &CSVDataView::add_predicate,"Add a function to filter stuff with")
+		.def("reset", &CSVDataView::reset_view, "Reset internal state.")
+		.def_property_readonly("formatted", &CSVDataView::format_pretty_view);
 }
