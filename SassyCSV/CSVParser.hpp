@@ -153,12 +153,12 @@ struct CSVOptions {
 		std::string_view const& float_ignore = "",
 		int const& expected_delimiters = -1,
 		int const& header_lines = 1,
-		NumberFormatting const number_formatting = NumberFormatting::INTERNATIONAL,
-		int float_round_decimals = 2,
-		bool consolidate_headers = false,
-		std::string_view consolidation_sep_str = " > ",
-		bool replace_newline = true,
-		std::string_view newline_replacement = ""
+		NumberFormatting const & number_formatting = NumberFormatting::INTERNATIONAL,
+		int const & float_round_decimals = 2,
+		bool const & consolidate_headers = false,
+		std::string_view const & consolidation_sep_str = " > ",
+		bool const & replace_newline = true,
+		std::string_view const & newline_replacement = ""
 	);
 
 	std::string_view get_delimiter();

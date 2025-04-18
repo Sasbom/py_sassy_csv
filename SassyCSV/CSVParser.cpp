@@ -464,12 +464,12 @@ CSVOptions::CSVOptions(
 	std::string_view const& float_ignore,
 	int const& expected_delimiter,
 	int const& header_line,
-	NumberFormatting const number_formatting,
-	int float_round_decimals,
-	bool consolidate_headers,
-	std::string_view consolidation_sep_str,
-	bool replace_newline,
-	std::string_view newline_replacement
+	NumberFormatting const & number_formatting,
+	int const & float_round_decimals,
+	bool const & consolidate_headers,
+	std::string_view const & consolidation_sep_str,
+	bool const & replace_newline,
+	std::string_view const & newline_replacement
 ) : delimiter{ delimiter },
 	quote{ quote },
 	newline{ newline },
@@ -492,6 +492,12 @@ std::string_view CSVOptions::get_float_delimiter() { return this->float_delimite
 std::string_view CSVOptions::get_float_ignore(){ return this->float_ignore; };
 int CSVOptions::get_expected_delimiters() { return this->expected_delimiters; };
 int CSVOptions::get_header_lines() { return this->header_lines; };
+NumberFormatting CSVOptions::get_number_formatting() { return this->number_formatting; };
+int CSVOptions::get_float_round_decimals() { return this->float_round_decimals; };
+bool CSVOptions::get_consolidate_headers() { return this->consolidate_headers; };
+std::string_view CSVOptions::get_consolidation_sep_str() { return this->consolidation_sep_str; };
+bool CSVOptions::get_replace_newline() { return this->replace_newline; };
+std::string_view CSVOptions::get_newline_replacement() { return this->newline_replacement; };
 
 void CSVOptions::set_delimiter(std::string_view const & delimiter) { this->delimiter = delimiter;};
 void CSVOptions::set_quote(std::string_view const& quote) { this->quote = quote; };
@@ -501,6 +507,12 @@ void CSVOptions::set_float_delimiter(std::string_view const& float_delimiter) { 
 void CSVOptions::set_float_ignore(std::string_view const& float_ignore) { this->float_ignore = float_ignore; };
 void CSVOptions::set_expected_delimiters(int const& expected_delimiters) { this->expected_delimiters = expected_delimiters; };
 void CSVOptions::set_header_lines(int const& header_lines) { this->header_lines = header_lines; };
+void CSVOptions::set_number_formatting(NumberFormatting const & number_formatting) { this->number_formatting = number_formatting;};
+void CSVOptions::set_float_round_decimals(int const& float_round_decimals) { this->float_round_decimals = float_round_decimals; };
+void CSVOptions::set_consolidate_headers(bool const& consolidate_headers) { this->consolidate_headers = consolidate_headers; };
+void CSVOptions::set_consolidation_sep_str(std::string_view const& consolidation_sep_str) { this->consolidation_sep_str = consolidation_sep_str; };
+void CSVOptions::set_replace_newline(bool const& replace_newline) { this->replace_newline = replace_newline; };
+void CSVOptions::set_newline_replacement(std::string_view const& newline_replacement) { this->newline_replacement = newline_replacement; };
 
 CSVOptions CSVParser::get_options() {
 	return this->options;
