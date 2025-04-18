@@ -429,7 +429,7 @@ std::shared_ptr<CSVDataView> CSVData::generate_view() {
 // Parser Options
 //CSVParser::CSVOptions::CSVOptions() {};
 
-CSVParser::CSVOptions::CSVOptions(CSVParser::CSVOptions const & opts) : 
+CSVOptions::CSVOptions(CSVOptions const & opts) : 
 	delimiter{ opts.delimiter },
 	quote{ opts.quote },
 	newline{ opts.newline },
@@ -438,7 +438,7 @@ CSVParser::CSVOptions::CSVOptions(CSVParser::CSVOptions const & opts) :
 	expected_delimiters{ opts.expected_delimiters },
 	header_lines{ opts.header_lines } {};
 
-CSVParser::CSVOptions::CSVOptions(
+CSVOptions::CSVOptions(
 	std::string_view const& delimiter,
 	std::string_view const& quote,
 	std::string_view const& newline,
@@ -455,29 +455,58 @@ CSVParser::CSVOptions::CSVOptions(
 	expected_delimiters{ expected_delimiters },
 	header_lines{ header_lines } {};
 
-std::string_view CSVParser::CSVOptions::get_delimiter() { return this->delimiter; };
-std::string_view CSVParser::CSVOptions::get_quote() { return this->quote; };
-std::string_view CSVParser::CSVOptions::get_newline() { return this->newline; };
-bool CSVParser::CSVOptions::get_parse_numbers() { return this->parse_numbers; };
-std::string_view CSVParser::CSVOptions::get_float_delimiter() { return this->float_delimiter; };
-std::string_view CSVParser::CSVOptions::get_float_ignore(){ return this->float_ignore; };
-int CSVParser::CSVOptions::get_expected_delimiters() { return this->expected_delimiters; };
-int CSVParser::CSVOptions::get_header_lines() { return this->header_lines; };
+CSVOptions::CSVOptions(
+	std::string_view const& delimiter ,
+	std::string_view const& quote,
+	std::string_view const& newline,
+	bool const& parse_numbers,
+	std::string_view const& float_delimiter ,
+	std::string_view const& float_ignore,
+	int const& expected_delimiter,
+	int const& header_line,
+	NumberFormatting const number_formatting,
+	int float_round_decimals,
+	bool consolidate_headers,
+	std::string_view consolidation_sep_str,
+	bool replace_newline,
+	std::string_view newline_replacement
+) : delimiter{ delimiter },
+	quote{ quote },
+	newline{ newline },
+	parse_numbers{ parse_numbers },
+	float_delimiter{ float_delimiter },
+	expected_delimiters{ expected_delimiters },
+	header_lines{ header_lines },
+	number_formatting{number_formatting},
+	float_round_decimals{float_round_decimals},
+	consolidate_headers{consolidate_headers},
+	consolidation_sep_str{ consolidation_sep_str },
+	replace_newline{replace_newline},
+	newline_replacement{newline_replacement} {};
 
-void CSVParser::CSVOptions::set_delimiter(std::string_view const & delimiter) { this->delimiter = delimiter;};
-void CSVParser::CSVOptions::set_quote(std::string_view const& quote) { this->quote = quote; };
-void CSVParser::CSVOptions::set_newline(std::string_view const& newline) { this->newline = newline; };
-void CSVParser::CSVOptions::set_parse_numbers(bool const& parse_numbers) { this->parse_numbers = parse_numbers; };
-void CSVParser::CSVOptions::set_float_delimiter(std::string_view const& float_delimiter) { this->float_delimiter = float_delimiter; };
-void CSVParser::CSVOptions::set_float_ignore(std::string_view const& float_ignore) { this->float_ignore = float_ignore; };
-void CSVParser::CSVOptions::set_expected_delimiters(int const& expected_delimiters) { this->expected_delimiters = expected_delimiters; };
-void CSVParser::CSVOptions::set_header_lines(int const& header_lines) { this->header_lines = header_lines; };
+std::string_view CSVOptions::get_delimiter() { return this->delimiter; };
+std::string_view CSVOptions::get_quote() { return this->quote; };
+std::string_view CSVOptions::get_newline() { return this->newline; };
+bool CSVOptions::get_parse_numbers() { return this->parse_numbers; };
+std::string_view CSVOptions::get_float_delimiter() { return this->float_delimiter; };
+std::string_view CSVOptions::get_float_ignore(){ return this->float_ignore; };
+int CSVOptions::get_expected_delimiters() { return this->expected_delimiters; };
+int CSVOptions::get_header_lines() { return this->header_lines; };
 
-CSVParser::CSVOptions CSVParser::get_options() {
+void CSVOptions::set_delimiter(std::string_view const & delimiter) { this->delimiter = delimiter;};
+void CSVOptions::set_quote(std::string_view const& quote) { this->quote = quote; };
+void CSVOptions::set_newline(std::string_view const& newline) { this->newline = newline; };
+void CSVOptions::set_parse_numbers(bool const& parse_numbers) { this->parse_numbers = parse_numbers; };
+void CSVOptions::set_float_delimiter(std::string_view const& float_delimiter) { this->float_delimiter = float_delimiter; };
+void CSVOptions::set_float_ignore(std::string_view const& float_ignore) { this->float_ignore = float_ignore; };
+void CSVOptions::set_expected_delimiters(int const& expected_delimiters) { this->expected_delimiters = expected_delimiters; };
+void CSVOptions::set_header_lines(int const& header_lines) { this->header_lines = header_lines; };
+
+CSVOptions CSVParser::get_options() {
 	return this->options;
 }
 
-void CSVParser::set_options(CSVParser::CSVOptions const & options) {
+void CSVParser::set_options(CSVOptions const & options) {
 	this->options.delimiter = options.delimiter;
 	this->options.quote = options.quote;
 	this->options.newline = options.newline;
@@ -605,7 +634,7 @@ std::string CSVDataView::format_pretty_view() {
 			entrs.push_back(entry_as_string(entry));
 			idx++;
 		}
-		auto width = longest_entry_exclude(entrs,this->exclude_indices);
+		auto width = longest_entry(entrs);
 
 		for (auto& str : entrs) {
 			exclude_char_string(str);
@@ -694,7 +723,7 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 
 	std::cout << quote << " " << delimiter << " " << newline;
 	int size = 0;
-	std::cout << "reading file" << "\n";
+	//std::cout << "reading file" << "\n";
 	while (file_stream){
 		file_stream.get(cur_char);
 		//std::cout << std::string{ cur_char } << " ";
@@ -717,7 +746,7 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 					collect.pop_back();
 					collect.erase(0, 1);
 					collect_line.push_back(collect);
-					py::print("collect:", collect);
+					//py::print("collect:", collect);
 					collect.clear();
 
 
@@ -728,7 +757,7 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 					else {
 						delimiters_togo -= 1;
 						if (delimiters_togo < 0 && !file_stream.eof()) {
-							std::cout << delimiters_togo << " <- Delimiters to go\n";
+							//std::cout << delimiters_togo << " <- Delimiters to go\n";
 							throw std::runtime_error("Delimiters amount need to be similar across lines");
 						}
 					}
@@ -736,14 +765,14 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 				if (cur_char != newline && !file_stream.eof())
 					continue;
 				else {
-					std::cout << "new line!" << get_headers << " " << delimiters_togo << " " << expected_delimiters << "\n";
+					//std::cout << "new line!" << get_headers << " " << delimiters_togo << " " << expected_delimiters << "\n";
 				}
 			}
 		}
 
 		if (cur_char == newline || file_stream.eof()) {
 			if (cur_header < headers && get_headers) {
-				std::cout << "getting headers \n";
+				//std::cout << "getting headers \n";
 				// header phase
 				if (cur_header == 0) {
 					count_commas = false;
@@ -751,16 +780,16 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 					//cur_header += 1;
 				}
 				if (cur_header == headers - 1) {
-					std::cout << "stopping header gather \n";
+					//std::cout << "stopping header gather \n";
 					get_headers = false;
 					
 				}
 				if (delimiters_togo == 0) {
-					std::cout << "collecting headers" << cur_header << headers << "\n";
+					//std::cout << "collecting headers" << cur_header << headers << "\n";
 					bool append = (cur_header > 0);
 					int c{ 0 };
 					for (auto el : collect_line) {
-						py::print(el,get_headers, append);
+						//py::print(el,get_headers, append);
 						if (!append) {
 							csv_data->headers.push_back(el);
 						}
@@ -781,7 +810,7 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 								throw std::runtime_error("Headers with same name encountered.");
 							}
 							auto vec = new std::vector<std::shared_ptr<CSVEntry>>{};
-							std::cout << "inserting with key: " << el_new << "\n";
+							//std::cout << "inserting with key: " << el_new << "\n";
 							csv_data->data.insert({ el_new, *vec });
 						}
 						c += 1;
@@ -812,7 +841,7 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 						);
 
 						auto header_entry = csv_data->headers[c];
-						py::print(header_entry,">", entry->py_read());
+						//py::print(header_entry,">", entry->py_read());
 						c += 1;
 						auto& vec = csv_data->data.at(header_entry);
 						entry->origin = &vec;
@@ -822,7 +851,7 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 					collect_line.clear();
 					continue;
 				}
-				std::cout << "current char is newline\n";
+				//std::cout << "current char is newline\n";
 				collect += cur_char;
 				continue;
 			}
@@ -839,7 +868,7 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 	
 	csv_data->size = size;
 	
-	std::cout << "done parsing? done parsing.\n";
+	//std::cout << "done parsing? done parsing.\n";
 	return csv_data;
 }
 
@@ -872,7 +901,7 @@ std::shared_ptr<CSVData> CSVParser::parse_noquotes(std::string_view const& file)
 	char float_ignore = options.float_ignore.data()[0];
 
 	int size = 0;
-	std::cout << "reading file " << file << "\n";
+	//std::cout << "reading file " << file << "\n";
 	while (file_stream) {
 		file_stream.get(cur_char);
 		//std::cout << std::string{ cur_char } << " ";
@@ -891,7 +920,7 @@ std::shared_ptr<CSVData> CSVParser::parse_noquotes(std::string_view const& file)
 
 
 			collect_line.push_back(collect);
-			py::print("collect:", collect, "collect line size",collect_line.size());
+			//py::print("collect:", collect, "collect line size",collect_line.size());
 			collect.clear();
 
 			// when a word gets added, that's the moment we count a delimiter.
@@ -901,24 +930,24 @@ std::shared_ptr<CSVData> CSVParser::parse_noquotes(std::string_view const& file)
 			else {
 				delimiters_togo -= 1;
 				if (delimiters_togo < 0 && !file_stream.eof()) {
-					std::cout << delimiters_togo << " <- Delimiters to go\n";
+					//std::cout << delimiters_togo << " <- Delimiters to go\n";
 					throw std::runtime_error("Delimiters amount need to be similar across lines");
 				}
 			}
 			
 			if (cur_char != newline && !file_stream.eof()) {
-				std::cout << "continuing\n";
+				//std::cout << "continuing\n";
 				continue;
 			}
 			else {
-				std::cout << "new line or EOF!" << get_headers << " " << delimiters_togo << "\n";
+				//std::cout << "new line or EOF!" << get_headers << " " << delimiters_togo << "\n";
 			}
 			
 		}
 
 		if (cur_char == newline || file_stream.eof()) {
 			if (cur_header < headers && get_headers) {
-				std::cout << "getting headers \n";
+				//std::cout << "getting headers \n";
 				// header phase
 				if (cur_header == 0) {
 					count_commas = false;
@@ -926,12 +955,12 @@ std::shared_ptr<CSVData> CSVParser::parse_noquotes(std::string_view const& file)
 					//cur_header += 1;
 				}
 				if (cur_header == headers - 1) {
-					std::cout << "stopping header gather \n";
+					//std::cout << "stopping header gather \n";
 					get_headers = false;
 
 				}
 				if (delimiters_togo == 0) {
-					std::cout << "collecting headers" << cur_header << headers << "\n";
+					//std::cout << "collecting headers" << cur_header << headers << "\n";
 					bool append = (cur_header > 0);
 					int c{ 0 };
 					for (auto el : collect_line) {
@@ -956,7 +985,7 @@ std::shared_ptr<CSVData> CSVParser::parse_noquotes(std::string_view const& file)
 								throw std::runtime_error("Headers with same name encountered.");
 							}
 							auto vec = new std::vector<std::shared_ptr<CSVEntry>>{};
-							std::cout << "inserting with key: " << el_new << "\n";
+							//std::cout << "inserting with key: " << el_new << "\n";
 							csv_data->data.insert({ el_new, *vec });
 						}
 						c += 1;
@@ -969,9 +998,9 @@ std::shared_ptr<CSVData> CSVParser::parse_noquotes(std::string_view const& file)
 			}
 			else {
 				// reset delimiters if appropriate
-				std::cout << "attempting add | EOF:" << file_stream.eof() << "\n";
+				//std::cout << "attempting add | EOF:" << file_stream.eof() << "\n";
 				if (delimiters_togo == 0 || file_stream.eof()) {
-					std::cout << "adding line\n";
+					//std::cout << "adding line\n";
 					delimiters_togo = expected_delimiters;
 					int c = 0;
 
@@ -988,7 +1017,7 @@ std::shared_ptr<CSVData> CSVParser::parse_noquotes(std::string_view const& file)
 						);
 
 						auto header_entry = csv_data->headers[c];
-						py::print(header_entry, ">", entry->py_read());
+						//py::print(header_entry, ">", entry->py_read());
 						c += 1;
 						auto& vec = csv_data->data.at(header_entry);
 						entry->origin = &vec;
@@ -998,7 +1027,7 @@ std::shared_ptr<CSVData> CSVParser::parse_noquotes(std::string_view const& file)
 					collect_line.clear();
 					continue;
 				}
-				std::cout << "current char is newline\n";
+				//std::cout << "current char is newline\n";
 				collect += cur_char;
 				continue;
 			}
@@ -1015,7 +1044,7 @@ std::shared_ptr<CSVData> CSVParser::parse_noquotes(std::string_view const& file)
 
 	csv_data->size = size;
 
-	std::cout << "done parsing? done parsing.\n";
+	//std::cout << "done parsing? done parsing.\n";
 	return csv_data;
 }
 

@@ -21,7 +21,7 @@ PYBIND11_MODULE(_SassyCSV, m) {
 		.def("type",&CSVEntry::strtype,"Return the stored type as a string.")
 		.def("__repr__", [](CSVEntry& e) {return py::str("<CSVEntry holding: ") + py::str(e.py_read()) + py::str(" of type ") + e.strtype() + py::str(" >"); }, "")
 		.def("__str__", [](CSVEntry & e) {return py::str(e.py_read()); }, "");
-	py::class_<CSVParser::CSVOptions>(m, "CSVOptions")
+	py::class_<CSVOptions>(m, "CSVOptions")
 		.def(py::init<>())
 		.def(py::init<std::string_view&,
 			std::string_view&,
@@ -39,14 +39,14 @@ PYBIND11_MODULE(_SassyCSV, m) {
 			"float_ignore"_a = " ",
 			"expected_delimiters"_a = -1,
 			"header_lines"_a = 1)
-		.def_property("delimiter", &CSVParser::CSVOptions::get_delimiter, &CSVParser::CSVOptions::set_delimiter)
-		.def_property("quote", &CSVParser::CSVOptions::get_quote, &CSVParser::CSVOptions::set_quote)
-		.def_property("newline", &CSVParser::CSVOptions::get_newline, &CSVParser::CSVOptions::set_newline)
-		.def_property("parse_numbers", &CSVParser::CSVOptions::get_parse_numbers, &CSVParser::CSVOptions::set_parse_numbers)
-		.def_property("float_delimiter", &CSVParser::CSVOptions::get_float_delimiter, &CSVParser::CSVOptions::set_float_delimiter)
-		.def_property("float_ignore", &CSVParser::CSVOptions::get_float_ignore, &CSVParser::CSVOptions::set_float_ignore)
-		.def_property("expected_delimiters", &CSVParser::CSVOptions::get_expected_delimiters, &CSVParser::CSVOptions::set_expected_delimiters)
-		.def_property("header_lines", &CSVParser::CSVOptions::get_header_lines, &CSVParser::CSVOptions::set_header_lines);
+		.def_property("delimiter", &CSVOptions::get_delimiter, &CSVOptions::set_delimiter)
+		.def_property("quote", &CSVOptions::get_quote, &CSVOptions::set_quote)
+		.def_property("newline", &CSVOptions::get_newline, &CSVOptions::set_newline)
+		.def_property("parse_numbers", &CSVOptions::get_parse_numbers, &CSVOptions::set_parse_numbers)
+		.def_property("float_delimiter", &CSVOptions::get_float_delimiter, &CSVOptions::set_float_delimiter)
+		.def_property("float_ignore", &CSVOptions::get_float_ignore, &CSVOptions::set_float_ignore)
+		.def_property("expected_delimiters", &CSVOptions::get_expected_delimiters, &CSVOptions::set_expected_delimiters)
+		.def_property("header_lines", &CSVOptions::get_header_lines, &CSVOptions::set_header_lines);
 
 	py::class_<CSVParser>(m, "CSVParser")
 		.def(py::init<>())

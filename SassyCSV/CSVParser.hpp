@@ -106,49 +106,92 @@ struct CSVDataView: std::enable_shared_from_this<CSVDataView> {
 	std::string format_pretty_view();
 };
 
+enum class NumberFormatting {
+	INTERNATIONAL,
+	INDIAN
+};
+
+struct CSVOptions {
+	// parsing / global options
+	std::string_view delimiter = ",";
+	std::string_view quote = "\"";
+	std::string_view newline = "\n";
+	bool parse_numbers = true;
+	std::string_view float_delimiter = ".";
+	std::string_view float_ignore = "";
+	int expected_delimiters = -1;
+	int header_lines = 1;
+
+	// writing specific options
+	NumberFormatting number_formatting = NumberFormatting::INTERNATIONAL;
+	int float_round_decimals = 2;
+	bool consolidate_headers = true;
+	std::string_view consolidation_sep_str = " > ";
+	bool replace_newline = true;
+	std::string_view newline_replacement = "";
+
+	//CSVOptions();
+	CSVOptions(CSVOptions const& opts);
+	//CSVOptions(CSVOptions const&) = default;
+	CSVOptions(
+		std::string_view const& delimiter = ",",
+		std::string_view const& quote = "\"",
+		std::string_view const& newline = "\n",
+		bool const& parse_numbers = true,
+		std::string_view const& float_delimiter = ".",
+		std::string_view const& float_ignore = "",
+		int const& expected_delimiters = -1,
+		int const& header_lines = 1
+	);
+
+	CSVOptions(
+		std::string_view const& delimiter = ",",
+		std::string_view const& quote = "\"",
+		std::string_view const& newline = "\n",
+		bool const& parse_numbers = true,
+		std::string_view const& float_delimiter = ".",
+		std::string_view const& float_ignore = "",
+		int const& expected_delimiters = -1,
+		int const& header_lines = 1,
+		NumberFormatting const number_formatting = NumberFormatting::INTERNATIONAL,
+		int float_round_decimals = 2,
+		bool consolidate_headers = false,
+		std::string_view consolidation_sep_str = " > ",
+		bool replace_newline = true,
+		std::string_view newline_replacement = ""
+	);
+
+	std::string_view get_delimiter();
+	std::string_view get_quote();
+	std::string_view get_newline();
+	bool get_parse_numbers();
+	std::string_view get_float_delimiter();
+	std::string_view get_float_ignore();
+	int get_expected_delimiters();
+	int get_header_lines();
+	NumberFormatting get_number_formatting();
+	int get_float_round_decimals();
+	bool get_consolidate_headers();
+	std::string_view get_consolidation_sep_str();
+	bool get_replace_newline();
+	std::string_view get_newline_replacement();
+	void set_delimiter(std::string_view const& delimiter);
+	void set_quote(std::string_view const& quote);
+	void set_newline(std::string_view const& newline);
+	void set_parse_numbers(bool const& parse_numbers);
+	void set_float_delimiter(std::string_view const& float_delimiter);
+	void set_float_ignore(std::string_view const& float_ignore);
+	void set_expected_delimiters(int const& expected_delimiters);
+	void set_header_lines(int const& header_lines);
+	void set_number_formatting(NumberFormatting const & number_formatting);
+	void set_float_round_decimals(int const & float_round_decimals);
+	void set_consolidate_headers(bool const & consolidate_headers);
+	void set_consolidation_sep_str(std::string_view const & consolidation_sep_str);
+	void set_replace_newline(bool const & replace_newline);
+	void set_newline_replacement(std::string_view const & newline_replacement);
+};
+
 struct CSVParser {
-	struct CSVOptions {
-		std::string_view delimiter = ",";
-		std::string_view quote = "\"";
-		std::string_view newline = "\n";
-		bool parse_numbers = true;
-		std::string_view float_delimiter = ".";
-		std::string_view float_ignore = "";
-		int expected_delimiters = -1;
-		int header_lines = 1;
-
-		//CSVOptions();
-		CSVOptions(CSVOptions const & opts);
-		//CSVOptions(CSVOptions const&) = default;
-		CSVOptions(
-			std::string_view const & delimiter = ",",
-			std::string_view const & quote = "\"",
-			std::string_view const & newline = "\n",
-			bool const & parse_numbers = true,
-			std::string_view const & float_delimiter = ".",
-			std::string_view const & float_ignore = "",
-			int const & expected_delimiters = -1,
-			int const & header_lines = 1
-		);
-
-		std::string_view get_delimiter();
-		std::string_view get_quote();
-		std::string_view get_newline();
-		bool get_parse_numbers();
-		std::string_view get_float_delimiter();
-		std::string_view get_float_ignore();
-		int get_expected_delimiters();
-		int get_header_lines();
-		void set_delimiter(std::string_view const& delimiter);
-		void set_quote(std::string_view const& quote);
-		void set_newline(std::string_view const& newline);
-		void set_parse_numbers(bool const& parse_numbers);
-		void set_float_delimiter(std::string_view const& float_delimiter);
-		void set_float_ignore(std::string_view const& float_ignore);
-		void set_expected_delimiters(int const& expected_delimiters);
-		void set_header_lines(int const& header_lines);
-
-	};
 
 	CSVOptions options{};
 
@@ -170,6 +213,13 @@ struct CSVParser {
 	std::shared_ptr<CSVData> parse_noquotes(std::string_view const& file_path);
 };
 
+struct CSVWriter {
+	CSVOptions options{};
+
+	void set_options(CSVOptions const& options);
+	CSVOptions get_options();
+
+};
 
 
 #endif // !_CSV_PARSER
