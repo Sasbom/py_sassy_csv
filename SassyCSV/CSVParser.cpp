@@ -455,34 +455,34 @@ CSVOptions::CSVOptions(
 	expected_delimiters{ expected_delimiters },
 	header_lines{ header_lines } {};
 
-CSVOptions::CSVOptions(
-	std::string_view const& delimiter ,
-	std::string_view const& quote,
-	std::string_view const& newline,
-	bool const& parse_numbers,
-	std::string_view const& float_delimiter ,
-	std::string_view const& float_ignore,
-	int const& expected_delimiter,
-	int const& header_line,
-	NumberFormatting const & number_formatting,
-	int const & float_round_decimals,
-	bool const & consolidate_headers,
-	std::string_view const & consolidation_sep_str,
-	bool const & replace_newline,
-	std::string_view const & newline_replacement
-) : delimiter{ delimiter },
-	quote{ quote },
-	newline{ newline },
-	parse_numbers{ parse_numbers },
-	float_delimiter{ float_delimiter },
-	expected_delimiters{ expected_delimiters },
-	header_lines{ header_lines },
-	number_formatting{number_formatting},
-	float_round_decimals{float_round_decimals},
-	consolidate_headers{consolidate_headers},
-	consolidation_sep_str{ consolidation_sep_str },
-	replace_newline{replace_newline},
-	newline_replacement{newline_replacement} {};
+//CSVOptions::CSVOptions(
+//	std::string_view const& delimiter ,
+//	std::string_view const& quote,
+//	std::string_view const& newline,
+//	bool const& parse_numbers,
+//	std::string_view const& float_delimiter ,
+//	std::string_view const& float_ignore,
+//	int const& expected_delimiter,
+//	int const& header_line,
+//	NumberFormatting const & number_formatting,
+//	int const & float_round_decimals,
+//	bool const & consolidate_headers,
+//	std::string_view const & consolidation_sep_str,
+//	bool const & replace_newline,
+//	std::string_view const & newline_replacement
+//) : delimiter{ delimiter },
+//	quote{ quote },
+//	newline{ newline },
+//	parse_numbers{ parse_numbers },
+//	float_delimiter{ float_delimiter },
+//	expected_delimiters{ expected_delimiters },
+//	header_lines{ header_lines },
+//	number_formatting{number_formatting},
+//	float_round_decimals{float_round_decimals},
+//	consolidate_headers{consolidate_headers},
+//	consolidation_sep_str{ consolidation_sep_str },
+//	replace_newline{replace_newline},
+//	newline_replacement{newline_replacement} {};
 
 std::string_view CSVOptions::get_delimiter() { return this->delimiter; };
 std::string_view CSVOptions::get_quote() { return this->quote; };
@@ -733,7 +733,7 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 	char float_delimiter = options.float_delimiter.data()[0];
 	char float_ignore = options.float_ignore.data()[0];
 
-	std::cout << quote << " " << delimiter << " " << newline;
+	//std::cout << quote << " " << delimiter << " " << newline;
 	int size = 0;
 	//std::cout << "reading file" << "\n";
 	while (file_stream){
@@ -807,7 +807,7 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 						}
 						else {
 							(&csv_data->headers.data()[c])->append('\x1f' + el);
-							std::cout << csv_data->headers.data()[c] << "\n";
+							//std::cout << csv_data->headers.data()[c] << "\n";
 							
 						}
 						// when collection is done, compose actual headers.
@@ -836,7 +836,7 @@ std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 			else {
 				// reset delimiters if appropriate
 				if (delimiters_togo == 0 || file_stream.eof()) {
-					std::cout << "adding line\n";
+					//std::cout << "adding line\n";
 					delimiters_togo = expected_delimiters;
 					int c = 0;
 					
@@ -976,7 +976,7 @@ std::shared_ptr<CSVData> CSVParser::parse_noquotes(std::string_view const& file)
 					bool append = (cur_header > 0);
 					int c{ 0 };
 					for (auto el : collect_line) {
-						py::print(el, get_headers, append);
+						//py::print(el, get_headers, append);
 						if (!append) {
 							csv_data->headers.push_back(el);
 						}
