@@ -21,6 +21,9 @@ PYBIND11_MODULE(_SassyCSV, m) {
 		.def("type",&CSVEntry::strtype,"Return the stored type as a string.")
 		.def("__repr__", [](CSVEntry& e) {return py::str("<CSVEntry holding: ") + py::str(e.py_read()) + py::str(" of type ") + e.strtype() + py::str(" >"); }, "")
 		.def("__str__", [](CSVEntry & e) {return py::str(e.py_read()); }, "");
+	py::enum_<NumberFormatting>(m, "NumberFormatting")
+		.value("INTERNATIONAL",NumberFormatting::INTERNATIONAL, "International number seperation formatting")
+		.value("INDIAN",NumberFormatting::INDIAN,"Indian Lakh number seperation formatting");
 	py::class_<CSVOptions>(m, "CSVOptions")
 		.def(py::init<>())
 		.def(py::init<std::string_view&,
@@ -30,7 +33,13 @@ PYBIND11_MODULE(_SassyCSV, m) {
 			std::string_view&,
 			std::string_view&,
 			int&,
-			int&>(),
+			int&,
+			NumberFormatting&,
+			int&,
+			bool&,
+			std::string_view&,
+			bool&,
+		    std::string_view&>(),
 			"delimiter"_a = ",",
 			"quote"_a = "\"",
 			"newline"_a = "\n",
@@ -38,7 +47,13 @@ PYBIND11_MODULE(_SassyCSV, m) {
 			"float_delimiter"_a = ".",
 			"float_ignore"_a = " ",
 			"expected_delimiters"_a = -1,
-			"header_lines"_a = 1)
+			"header_lines"_a = 1,
+			"number_formatting"_a = NumberFormatting::INTERNATIONAL,
+			"float_round_decimals"_a = 2,
+			"consolidate_headers"_a = false,
+			"consolidation_sep_str"_a = " > ",
+			"replace_newline"_a = true,
+			"newline_replacement"_a = "")
 		.def_property("delimiter", &CSVOptions::get_delimiter, &CSVOptions::set_delimiter)
 		.def_property("quote", &CSVOptions::get_quote, &CSVOptions::set_quote)
 		.def_property("newline", &CSVOptions::get_newline, &CSVOptions::set_newline)

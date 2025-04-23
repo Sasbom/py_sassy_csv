@@ -436,7 +436,14 @@ CSVOptions::CSVOptions(CSVOptions const & opts) :
 	parse_numbers{ opts.parse_numbers },
 	float_delimiter{ opts.float_delimiter },
 	expected_delimiters{ opts.expected_delimiters },
-	header_lines{ opts.header_lines } {};
+	header_lines{ opts.header_lines },
+	number_formatting{ opts.number_formatting },
+	float_round_decimals { opts.float_round_decimals},
+	consolidate_headers { opts.consolidate_headers},
+	consolidation_sep_str { opts.consolidation_sep_str},
+	replace_newline { opts.replace_newline},
+	newline_replacement { opts.newline_replacement}
+{};
 
 CSVOptions::CSVOptions(
 	std::string_view const& delimiter,
@@ -446,14 +453,27 @@ CSVOptions::CSVOptions(
 	std::string_view const& float_delimiter,
 	std::string_view const& float_ignore,
 	int const & expected_delimiters,
-	int const & header_lines
+	int const & header_lines,
+	NumberFormatting const& number_formatting,
+	int const & float_round_decimals,
+	bool const & consolidate_headers,
+	std::string_view const & consolidation_sep_str,
+	bool const & replace_newline,
+	std::string_view const & newline_replacement
 ) : delimiter{ delimiter },
 	quote{ quote }, 
 	newline{newline},
 	parse_numbers{ parse_numbers }, 
 	float_delimiter{ float_delimiter }, 
 	expected_delimiters{ expected_delimiters },
-	header_lines{ header_lines } {};
+	header_lines{ header_lines },
+	number_formatting{ number_formatting },
+	float_round_decimals{float_round_decimals},
+	consolidate_headers{consolidate_headers},
+	consolidation_sep_str{consolidation_sep_str},
+	replace_newline{replace_newline},
+	newline_replacement{newline_replacement}
+{};
 
 //CSVOptions::CSVOptions(
 //	std::string_view const& delimiter ,
@@ -527,6 +547,12 @@ void CSVParser::set_options(CSVOptions const & options) {
 	this->options.float_ignore = options.float_ignore;
 	this->options.expected_delimiters = options.expected_delimiters;
 	this->options.header_lines = options.header_lines;
+	this->options.number_formatting = options.number_formatting;
+	this->options.float_round_decimals = options.float_round_decimals;
+	this->options.consolidate_headers = options.consolidate_headers;
+	this->options.consolidation_sep_str = options.consolidation_sep_str;
+	this->options.replace_newline = options.replace_newline;
+	this->options.newline_replacement = options.newline_replacement;
 }
 
 // Parser Main
@@ -776,7 +802,7 @@ std::string CSVDataView::format_pretty_view() {
 
 std::shared_ptr<CSVData> CSVParser::parse(std::string_view const& file) {
 	if (options.quote.empty()) {
-		std::cout << "No quotes. Parsing without.\n";
+		//std::cout << "No quotes. Parsing without.\n";
 		return this->parse_noquotes(file);
 	}
 
@@ -1057,8 +1083,7 @@ std::shared_ptr<CSVData> CSVParser::parse_noquotes(std::string_view const& file)
 						}
 						else {
 							(&csv_data->headers.data()[c])->append('\x1f' + el);
-							std::cout << csv_data->headers.data()[c] << "\n";
-
+							//std::cout << csv_data->headers.data()[c] << "\n";
 						}
 						// when collection is done, compose actual headers.
 						if (!get_headers) {

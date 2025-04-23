@@ -138,17 +138,6 @@ struct CSVOptions {
 	//CSVOptions();
 	CSVOptions(CSVOptions const& opts);
 	//CSVOptions(CSVOptions const&) = default;
-	CSVOptions(
-		std::string_view const& delimiter = ",",
-		std::string_view const& quote = "\"",
-		std::string_view const& newline = "\n",
-		bool const& parse_numbers = true,
-		std::string_view const& float_delimiter = ".",
-		std::string_view const& float_ignore = "",
-		int const& expected_delimiters = -1,
-		int const& header_lines = 1
-	);
-
 	//CSVOptions(
 	//	std::string_view const& delimiter = ",",
 	//	std::string_view const& quote = "\"",
@@ -157,14 +146,25 @@ struct CSVOptions {
 	//	std::string_view const& float_delimiter = ".",
 	//	std::string_view const& float_ignore = "",
 	//	int const& expected_delimiters = -1,
-	//	int const& header_lines = 1,
-	//	NumberFormatting const & number_formatting = NumberFormatting::INTERNATIONAL,
-	//	int const & float_round_decimals = 2,
-	//	bool const & consolidate_headers = false,
-	//	std::string_view const & consolidation_sep_str = " > ",
-	//	bool const & replace_newline = true,
-	//	std::string_view const & newline_replacement = ""
+	//	int const& header_lines = 1
 	//);
+
+	CSVOptions(
+		std::string_view const& delimiter = ",",
+		std::string_view const& quote = "\"",
+		std::string_view const& newline = "\n",
+		bool const& parse_numbers = true,
+		std::string_view const& float_delimiter = ".",
+		std::string_view const& float_ignore = "",
+		int const& expected_delimiters = -1,
+		int const& header_lines = 1,
+		NumberFormatting const & number_formatting = NumberFormatting::INTERNATIONAL,
+		int const & float_round_decimals = 2,
+		bool const & consolidate_headers = false,
+		std::string_view const & consolidation_sep_str = " > ",
+		bool const & replace_newline = true,
+		std::string_view const & newline_replacement = ""
+	);
 
 	std::string_view get_delimiter();
 	std::string_view get_quote();
