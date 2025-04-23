@@ -82,6 +82,10 @@ PYBIND11_MODULE(_SassyCSV, m) {
 	py::class_<CSVDataView, std::shared_ptr<CSVDataView>>(m, "CSVDataView")
 		.def(py::init<>())
 		.def("filter_func", &CSVDataView::add_predicate,"Add a function to filter stuff with")
+		.def("no_headers",&CSVDataView::disable_all_headers, "Remove all headers from view")
+		.def("all_headers", &CSVDataView::view_all_headers, "Reset view to show all headers")
+		.def("select_headers",&CSVDataView::select_headers, "Select headers to show")
+		.def("hide_headers", &CSVDataView::remove_headers, "Select headers to hide")
 		.def("reset", &CSVDataView::reset_view, "Reset internal state.")
 		.def_property_readonly("formatted", &CSVDataView::format_pretty_view);
 }
