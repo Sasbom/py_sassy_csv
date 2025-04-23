@@ -845,6 +845,7 @@ std::string CSVWriter::write_s() {
 				int c{ 0 };
 				for (auto& spl : hdr_split) {
 					if (spl.empty()) {
+						c++;
 						continue;
 					}
 					if (c < hdr_split.size() - 1) {
@@ -931,6 +932,7 @@ std::string CSVWriter::write_s() {
 				int c{ 0 };
 				for (auto& spl : hdr_split) {
 					if (spl.empty()) {
+						c++;
 						continue;
 					}
 					if (c < hdr_split.size() -1) {
