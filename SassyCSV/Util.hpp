@@ -40,6 +40,16 @@ std::string keytuple_to_str(py::tuple const & tup) {
     return collect;
 }
 
+py::tuple str_to_keytuple(std::string str) {
+    auto split = split_str(str);
+    auto tup = py::tuple(split.size());
+    int c{ 0 };
+    for (auto el = split.begin(); el != split.end(); el++, c++) {
+        tup[c] = py::str(*el);
+    }
+    return tup;
+}
+
 std::size_t longest_entry(std::vector<std::string>& entries) {
     std::size_t maxsize{ 0 };
     for (auto& entry : entries) {
@@ -98,7 +108,7 @@ double round_double(double to_round, int decimals) {
 
 std::string format_int_international(long int const& value, std::string const& separator) {
     std::string collect{};
-    std::string_view num = std::to_string(value);
+    std::string num = std::to_string(value);
     std::size_t start = 3 - (num.size() % 3);
     std::size_t c{ start };
     for (auto i = num.begin(); i != num.end(); i++, c++) {
@@ -113,7 +123,7 @@ std::string format_int_international(long int const& value, std::string const& s
 
 std::string format_int_india(long int const& value, std::string const& separator) {
     std::string collect{};
-    std::string_view num = std::to_string(value);
+    std::string num = std::to_string(value);
     bool first = false;
     std::size_t c = 0;
     for (auto i = num.rbegin(); i != num.rend(); i++, c++) {

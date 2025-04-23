@@ -46,7 +46,13 @@ PYBIND11_MODULE(_SassyCSV, m) {
 		.def_property("float_delimiter", &CSVOptions::get_float_delimiter, &CSVOptions::set_float_delimiter)
 		.def_property("float_ignore", &CSVOptions::get_float_ignore, &CSVOptions::set_float_ignore)
 		.def_property("expected_delimiters", &CSVOptions::get_expected_delimiters, &CSVOptions::set_expected_delimiters)
-		.def_property("header_lines", &CSVOptions::get_header_lines, &CSVOptions::set_header_lines);
+		.def_property("header_lines", &CSVOptions::get_header_lines, &CSVOptions::set_header_lines)
+		.def_property("number_formatting",&CSVOptions::get_number_formatting, &CSVOptions::set_number_formatting)
+		.def_property("float_decimals",&CSVOptions::get_float_round_decimals, &CSVOptions::set_float_round_decimals)
+		.def_property("collapse_headers", &CSVOptions::get_consolidate_headers, &CSVOptions::set_consolidate_headers)
+		.def_property("collapse_header_join_str",&CSVOptions::get_consolidation_sep_str,&CSVOptions::set_consolidation_sep_str)
+		.def_property("replace_newline",&CSVOptions::get_replace_newline, &CSVOptions::set_replace_newline)
+		.def_property("newline_replacement", &CSVOptions::get_newline_replacement,&CSVOptions::set_newline_replacement);
 
 	py::class_<CSVParser>(m, "CSVParser")
 		.def(py::init<>())

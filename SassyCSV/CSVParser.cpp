@@ -588,6 +588,22 @@ py::str CSVEntry::strtype() {
 void CSVDataView::reset_view() {
 	this->exclude_headers.clear();
 	this->exclude_indices.clear();
+	this->predicates.clear();
+}
+
+void CSVDataView::view_all_indices() {
+	this->exclude_indices.clear();
+	this->predicates.clear();
+}
+
+void CSVDataView::view_all_headers() {
+	this->exclude_headers.clear();
+}
+
+void CSVDataView::disable_all_headers() {
+	for (auto& header : this->data->headers) {
+		this->exclude_headers.insert(header);
+	}
 }
 
 void CSVDataView::evaluate_predicates() {
@@ -623,6 +639,62 @@ std::shared_ptr<CSVDataView> CSVDataView::add_predicate(predicate_func const& fu
 	return this->shared_from_this();
 }
 
+std::shared_ptr<CSVDataView> CSVDataView::select_headers(py::args args) {
+	this->disable_all_headers();
+	
+	for (auto& arg : args) {
+		std::string key{};
+		if (py::isinstance<py::str>(arg)) {
+			key = static_cast<std::string>(arg.cast<py::str>());
+		}
+		else if (py::isinstance<py::tuple>(arg)) {
+			key = keytuple_to_str(arg.cast<py::tuple>());
+		}
+		bool has_key = false;
+		for (auto& h : this->data->headers) {
+			if (key == h) {
+				has_key = true;
+				break;
+			}
+		}
+
+		if (!has_key) {
+			throw py::key_error("Key not present in headers");
+		}
+
+		this->exclude_headers.erase(key);
+	}
+	
+	return this->shared_from_this();
+}
+
+std::shared_ptr<CSVDataView> CSVDataView::remove_headers(py::args args) {
+	for (auto& arg : args) {
+		std::string key{};
+		if (py::isinstance<py::str>(arg)) {
+			key = static_cast<std::string>(arg.cast<py::str>());
+		}
+		else if (py::isinstance<py::tuple>(arg)) {
+			key = keytuple_to_str(arg.cast<py::tuple>());
+		}
+		bool has_key = false;
+		for (auto& h : this->data->headers) {
+			if (key == h) {
+				has_key = true;
+				break;
+			}
+		}
+
+		if (!has_key) {
+			throw py::key_error("Key not present in headers");
+		}
+
+		this->exclude_headers.insert(key);
+	}
+	
+	return this->shared_from_this();
+}
+
 std::string CSVDataView::format_pretty_view() {
 	std::string collect{};
 
@@ -633,8 +705,13 @@ std::string CSVDataView::format_pretty_view() {
 
 	auto size = this->data->size - this->exclude_indices.size();
 
+	auto header_size = this->data->header_count - this->exclude_headers.size();
 
 	for (auto& el : this->data->headers) {
+		if (this->exclude_headers.contains(el)) {
+			continue;
+		}
+
 		auto entrs = split_str(el);
 		std::size_t idx{ 0 };
 		for (auto& entry : this->data->data.at(el)) {
@@ -672,7 +749,7 @@ std::string CSVDataView::format_pretty_view() {
 		c++;
 	}
 
-	for (std::size_t i{ 0 }; i < size + this->data->header_count; i++) {
+	for (std::size_t i{ 0 }; i < size + header_size; i++) {
 		collect += "| ";
 
 		for (auto v = std::begin(column_data); v != std::end(column_data); v++) {
@@ -685,7 +762,7 @@ std::string CSVDataView::format_pretty_view() {
 		}
 		collect += '\n';
 
-		if ((i == this->data->header_count - 1) || i == (size + this->data->header_count - 1)) {
+		if ((i == header_size - 1) || i == (size + header_size - 1)) {
 			std::size_t c = 0;
 			while (c < acc_width) {
 				collect += '-';

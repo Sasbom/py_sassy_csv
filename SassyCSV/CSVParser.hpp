@@ -99,9 +99,14 @@ struct CSVDataView: std::enable_shared_from_this<CSVDataView> {
 	std::vector<viewfunc_t> predicates{};
 
 	void reset_view();
+	void view_all_indices();
+	void view_all_headers();
+	void disable_all_headers();
 	void evaluate_predicates();
 
 	std::shared_ptr<CSVDataView> add_predicate(predicate_func const & func);
+	std::shared_ptr<CSVDataView> select_headers(py::args args);
+	std::shared_ptr<CSVDataView> remove_headers(py::args args);
 
 	std::string format_pretty_view();
 };
