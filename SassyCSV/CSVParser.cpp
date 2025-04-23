@@ -425,6 +425,22 @@ std::shared_ptr<CSVDataView> CSVData::generate_view() {
 	return view;
 }
 
+CSVWriter CSVData::writer() {
+	CSVWriter writer{};
+
+	writer.source = this->shared_from_this();
+	return writer;
+}
+
+CSVWriter CSVData::writer_with_options(CSVOptions const& options) {
+	CSVWriter writer{};
+
+	writer.options = options;
+
+	writer.source = this->shared_from_this();
+	return writer;
+}
+
 // Parser
 // Parser Options
 //CSVParser::CSVOptions::CSVOptions() {};
@@ -475,35 +491,6 @@ CSVOptions::CSVOptions(
 	newline_replacement{newline_replacement}
 {};
 
-//CSVOptions::CSVOptions(
-//	std::string_view const& delimiter ,
-//	std::string_view const& quote,
-//	std::string_view const& newline,
-//	bool const& parse_numbers,
-//	std::string_view const& float_delimiter ,
-//	std::string_view const& float_ignore,
-//	int const& expected_delimiter,
-//	int const& header_line,
-//	NumberFormatting const & number_formatting,
-//	int const & float_round_decimals,
-//	bool const & consolidate_headers,
-//	std::string_view const & consolidation_sep_str,
-//	bool const & replace_newline,
-//	std::string_view const & newline_replacement
-//) : delimiter{ delimiter },
-//	quote{ quote },
-//	newline{ newline },
-//	parse_numbers{ parse_numbers },
-//	float_delimiter{ float_delimiter },
-//	expected_delimiters{ expected_delimiters },
-//	header_lines{ header_lines },
-//	number_formatting{number_formatting},
-//	float_round_decimals{float_round_decimals},
-//	consolidate_headers{consolidate_headers},
-//	consolidation_sep_str{ consolidation_sep_str },
-//	replace_newline{replace_newline},
-//	newline_replacement{newline_replacement} {};
-
 std::string_view CSVOptions::get_delimiter() { return this->delimiter; };
 std::string_view CSVOptions::get_quote() { return this->quote; };
 std::string_view CSVOptions::get_newline() { return this->newline; };
@@ -534,7 +521,7 @@ void CSVOptions::set_consolidation_sep_str(std::string_view const& consolidation
 void CSVOptions::set_replace_newline(bool const& replace_newline) { this->replace_newline = replace_newline; };
 void CSVOptions::set_newline_replacement(std::string_view const& newline_replacement) { this->newline_replacement = newline_replacement; };
 
-CSVOptions CSVParser::get_options() {
+CSVOptions& CSVParser::get_options() {
 	return this->options;
 }
 
@@ -796,6 +783,251 @@ std::string CSVDataView::format_pretty_view() {
 		}
 	}
 	return collect;
+}
+
+CSVWriter CSVDataView::writer() {
+	CSVWriter writer{};
+
+	writer.source = this->shared_from_this();
+	return writer;
+}
+
+CSVWriter CSVDataView::writer_with_options(CSVOptions const & options) {
+	CSVWriter writer{};
+
+	writer.options = options;
+
+	writer.source = this->shared_from_this();
+	return writer;
+}
+
+// writer
+std::string CSVWriter::write_s() {
+	auto src = this->source.index();
+
+	std::string collect{};
+	std::vector<std::vector<std::string>> column_data{};
+
+	std::string quote{};
+	if (!options.quote.empty()){
+		quote = options.quote.data();
+		quote.resize(1);
+	}
+	std::string delimiter = options.delimiter.data();
+	delimiter.resize(1);
+
+	std::string newline = options.newline.data();
+	newline.resize(1);
+	bool replace_newline = options.replace_newline;
+	auto newline_replace = options.newline_replacement.data();
+
+	std::string float_delimiter = options.float_delimiter.data();
+	float_delimiter.resize(1);
+	std::string float_ignore = options.float_ignore.data();
+	float_ignore.resize(1);
+	int float_dec = options.float_round_decimals;
+
+	auto num_fmt = options.number_formatting;
+
+	bool consolidate_hdr = options.consolidate_headers;
+	std::string hdr_join = options.consolidation_sep_str.data();
+
+	if (src == 0) {
+		auto source = std::get<0>(this->source);
+
+		for (auto& el : source->headers) {
+
+			std::vector<std::string> entrs{};
+
+			if (consolidate_hdr) {
+				auto hdr_split = split_str(el);
+				std::string hdr_col{};
+				int c{ 0 };
+				for (auto& spl : hdr_split) {
+					if (spl.empty()) {
+						continue;
+					}
+					if (c < hdr_split.size() - 1) {
+						hdr_col += spl + hdr_join;
+					}
+					else {
+						hdr_col += spl;
+					}
+					c++;
+				}
+				entrs.push_back(hdr_col);
+			}
+			else {
+				auto hdr_split = split_str(el);
+				for (auto& spl : hdr_split) {
+					entrs.push_back(spl);
+				}
+			}
+
+			for (auto& entry : source->data.at(el)) {
+				entry->update_data();
+
+				auto entr_str = entry_as_string(entry);
+				if (entry->data.index() == 1) {
+					if (num_fmt == NumberFormatting::INTERNATIONAL)
+						entr_str = format_int_international(std::get<1>(entry->data), float_ignore);
+					else if (num_fmt == NumberFormatting::INDIAN)
+						entr_str = format_int_india(std::get<1>(entry->data), float_ignore);
+				}
+				if (entry->data.index() == 2) {
+					if (num_fmt == NumberFormatting::INTERNATIONAL)
+						entr_str = format_double_international(std::get<2>(entry->data), float_ignore, float_delimiter, float_dec);
+					else if (num_fmt == NumberFormatting::INDIAN)
+						entr_str = format_double_india(std::get<2>(entry->data), float_ignore, float_delimiter, float_dec);
+				}
+
+				if (replace_newline)
+					exclude_char_string(entr_str, newline[0], newline_replace);
+				
+				entrs.push_back(entr_str);
+			}
+
+			column_data.push_back(entrs);
+		}
+
+		for (std::size_t idx{ 0 }; idx < source->size; idx++) {
+			std::size_t c{ 0 };
+			for (auto& vec : column_data) {
+
+				if (!options.quote.empty()) {
+					collect += quote + vec[idx] + quote;
+				}
+				else {
+					collect += vec[idx];
+				}
+
+				if (c < column_data.size() - 1) {
+					collect += delimiter;
+				}
+
+				c++;
+			}
+			if (idx < (source->size - 1)) {
+				collect += newline;
+			}
+		}
+	}
+	else if (src == 1) {
+		auto source = std::get<1>(this->source);
+		source->evaluate_predicates();
+		auto size = source->data->size - source->exclude_indices.size();
+
+		for (auto& el : source->data->headers) {
+
+			if (source->exclude_headers.contains(el)) {
+				continue;
+			}
+
+			std::vector<std::string> entrs{};
+
+			if (consolidate_hdr) {
+				auto hdr_split = split_str(el);
+				std::string hdr_col{};
+				int c{ 0 };
+				for (auto& spl : hdr_split) {
+					if (spl.empty()) {
+						continue;
+					}
+					if (c < hdr_split.size() -1) {
+						hdr_col += spl + hdr_join;
+					}
+					else {
+						hdr_col += spl;
+					}
+					c++;
+				}
+				entrs.push_back(hdr_col);
+			}
+			else {
+				auto hdr_split = split_str(el);
+				for (auto& spl : hdr_split) {
+					entrs.push_back(spl);
+				}
+			}
+
+			std::size_t idx{ 0 };
+			for (auto& entry : source->data->data.at(el)) {
+				if (source->exclude_indices.contains(idx)) {
+					idx++;
+					continue;
+				}
+
+				entry->update_data();
+
+				auto entr_str = entry_as_string(entry);
+				if (entry->data.index() == 1) {
+					if (num_fmt == NumberFormatting::INTERNATIONAL)
+						entr_str = format_int_international(std::get<1>(entry->data), float_ignore);
+					else if (num_fmt == NumberFormatting::INDIAN)
+						entr_str = format_int_india(std::get<1>(entry->data), float_ignore);
+				}
+				if (entry->data.index() == 2) {
+					if (num_fmt == NumberFormatting::INTERNATIONAL)
+						entr_str = format_double_international(std::get<2>(entry->data), float_ignore, float_delimiter, float_dec);
+					else if (num_fmt == NumberFormatting::INDIAN)
+						entr_str = format_double_india(std::get<2>(entry->data), float_ignore, float_delimiter, float_dec);
+				}
+
+				if (replace_newline)
+					exclude_char_string(entr_str, newline[0], newline_replace);
+
+				entrs.push_back(entr_str);
+				idx++;
+			}
+
+			column_data.push_back(entrs);
+		}
+		for (std::size_t idx{ 0 }; idx < size; idx++) {
+			std::size_t c{ 0 };
+			for (auto& vec : column_data) {
+
+				if (!options.quote.empty()) {
+					collect += quote + vec[idx] + quote;
+				}
+				else {
+					collect += vec[idx];
+				}
+
+				if (c < column_data.size() - 1) {
+					collect += delimiter;
+				}
+
+				c++;
+			}
+			if (idx < (size - 1)) {
+				collect += newline;
+			}
+		}
+
+	}
+
+	return collect;
+}
+
+CSVOptions& CSVWriter::get_options() {
+	return this->options;
+}
+
+void CSVWriter::set_options(CSVOptions const & options) {
+	this->options.delimiter = options.delimiter;
+	this->options.quote = options.quote;
+	this->options.newline = options.newline;
+	this->options.parse_numbers = options.parse_numbers;
+	this->options.float_delimiter = options.float_delimiter;
+	this->options.float_ignore = options.float_ignore;
+	this->options.expected_delimiters = options.expected_delimiters;
+	this->options.header_lines = options.header_lines;
+	this->options.number_formatting = options.number_formatting;
+	this->options.float_round_decimals = options.float_round_decimals;
+	this->options.consolidate_headers = options.consolidate_headers;
+	this->options.consolidation_sep_str = options.consolidation_sep_str;
+	this->options.replace_newline = options.replace_newline;
+	this->options.newline_replacement = options.newline_replacement;
 }
 
 // parser

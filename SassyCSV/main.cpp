@@ -22,6 +22,7 @@ PYBIND11_MODULE(_SassyCSV, m) {
 		.def("__repr__", [](CSVEntry& e) {return py::str("<CSVEntry holding: ") + py::str(e.py_read()) + py::str(" of type ") + e.strtype() + py::str(" >"); }, "")
 		.def("__str__", [](CSVEntry & e) {return py::str(e.py_read()); }, "");
 	py::enum_<NumberFormatting>(m, "NumberFormatting")
+		.value("NONE",NumberFormatting::NONE,"Don't format number at all.")
 		.value("INTERNATIONAL",NumberFormatting::INTERNATIONAL, "International number seperation formatting")
 		.value("INDIAN",NumberFormatting::INDIAN,"Indian Lakh number seperation formatting");
 	py::class_<CSVOptions>(m, "CSVOptions")
@@ -50,8 +51,8 @@ PYBIND11_MODULE(_SassyCSV, m) {
 			"header_lines"_a = 1,
 			"number_formatting"_a = NumberFormatting::INTERNATIONAL,
 			"float_round_decimals"_a = 2,
-			"consolidate_headers"_a = false,
-			"consolidation_sep_str"_a = " > ",
+			"collapse_headers"_a = false,
+			"collapse_header_join_str"_a = " > ",
 			"replace_newline"_a = true,
 			"newline_replacement"_a = "")
 		.def_property("delimiter", &CSVOptions::get_delimiter, &CSVOptions::set_delimiter)
@@ -68,7 +69,10 @@ PYBIND11_MODULE(_SassyCSV, m) {
 		.def_property("collapse_header_join_str",&CSVOptions::get_consolidation_sep_str,&CSVOptions::set_consolidation_sep_str)
 		.def_property("replace_newline",&CSVOptions::get_replace_newline, &CSVOptions::set_replace_newline)
 		.def_property("newline_replacement", &CSVOptions::get_newline_replacement,&CSVOptions::set_newline_replacement);
-
+	py::class_<CSVWriter>(m, "CSVWriter")
+		.def("write_s", &CSVWriter::write_s, "Write out contents with options.")
+		.def_property("options", py::cpp_function(&CSVWriter::get_options, py::return_value_policy::reference),
+			py::cpp_function(&CSVWriter::set_options));;
 	py::class_<CSVParser>(m, "CSVParser")
 		.def(py::init<>())
 		.def("parse", &CSVParser::parse, "Parse a csv file.")
@@ -93,7 +97,9 @@ PYBIND11_MODULE(_SassyCSV, m) {
 		.def_property_readonly("headers", &CSVData::read_headers_py)
 		.def_property_readonly("size", &CSVData::get_size)
 		.def_property_readonly("formatted", &CSVData::format_pretty)
-		.def("view",&CSVData::generate_view,"Provide a view into the world of CSV data.");
+		.def("view",&CSVData::generate_view,"Provide a view into the world of CSV data.")
+		.def("get_writer", &CSVData::writer, "Get a CSV Writer")
+		.def("get_writer", &CSVData::writer_with_options, "Get a CSV Writer");
 	py::class_<CSVDataView, std::shared_ptr<CSVDataView>>(m, "CSVDataView")
 		.def(py::init<>())
 		.def("filter_func", &CSVDataView::add_predicate,"Add a function to filter stuff with")
@@ -102,5 +108,7 @@ PYBIND11_MODULE(_SassyCSV, m) {
 		.def("select_headers",&CSVDataView::select_headers, "Select headers to show")
 		.def("hide_headers", &CSVDataView::remove_headers, "Select headers to hide")
 		.def("reset", &CSVDataView::reset_view, "Reset internal state.")
+		.def("get_writer", &CSVDataView::writer, "Get a CSV Writer")
+		.def("get_writer", &CSVDataView::writer_with_options, "Get a CSV Writer")
 		.def_property_readonly("formatted", &CSVDataView::format_pretty_view);
 }

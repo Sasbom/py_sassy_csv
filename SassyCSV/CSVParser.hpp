@@ -19,11 +19,10 @@ namespace py = pybind11;
 using CSV_datavar = std::variant<std::string, int, double>;
 using CSV_headervar = std::variant<std::string_view, std::vector<std::string_view>>;
 
-
-
-
 struct CSVData;
 struct CSVDataView;
+struct CSVWriter;
+struct CSVOptions;
 
 struct CSVEntry : std::enable_shared_from_this<CSVEntry> {
 	using CSV_function = std::function<void(CSVEntry*)>;
@@ -81,6 +80,9 @@ struct CSVData : std::enable_shared_from_this<CSVData> {
 	std::string format_pretty();
 
 	std::shared_ptr<CSVDataView> generate_view();
+
+	CSVWriter writer_with_options(CSVOptions const& options);
+	CSVWriter writer();
 };
 
 // A view
@@ -109,9 +111,14 @@ struct CSVDataView: std::enable_shared_from_this<CSVDataView> {
 	std::shared_ptr<CSVDataView> remove_headers(py::args args);
 
 	std::string format_pretty_view();
+
+	CSVWriter writer_with_options(CSVOptions const& options);
+	CSVWriter writer();
+
 };
 
 enum class NumberFormatting {
+	NONE,
 	INTERNATIONAL,
 	INDIAN
 };
@@ -201,7 +208,7 @@ struct CSVParser {
 	CSVOptions options{};
 
 	void set_options(CSVOptions const & options);
-	CSVOptions get_options();
+	CSVOptions& get_options();
 
 	CSVParser(
 		std::string_view const & delimiter= ",", 
@@ -216,13 +223,20 @@ struct CSVParser {
 
 	std::shared_ptr<CSVData> parse(std::string_view const& file_path);
 	std::shared_ptr<CSVData> parse_noquotes(std::string_view const& file_path);
+
 };
 
 struct CSVWriter {
+	using source_t = std::variant<std::shared_ptr<CSVData>, std::shared_ptr<CSVDataView>>;
+	
 	CSVOptions options{};
 
+	source_t source;
+
 	void set_options(CSVOptions const& options);
-	CSVOptions get_options();
+	CSVOptions& get_options();
+
+	std::string write_s();
 
 };
 
